@@ -1,0 +1,114 @@
+# Window Rules
+
+Window rules let you match newly opened windows and automatically apply actions: force floating, assign to a workspace, or set initial geometry.
+
+## Defining rules
+
+```lua
+gar.rule(match_table, actions_table)
+```
+
+Both arguments are Lua tables.
+
+## Match criteria
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `app_name` | string | Application name (e.g., `"Calculator"`, `"Firefox"`) |
+| `app_bundle` | string | Bundle identifier (e.g., `"com.apple.calculator"`) |
+| `title` | string | Window title |
+
+If multiple criteria are specified, all must match (AND logic).
+
+### Finding app names and bundle IDs
+
+Use the IPC to inspect running windows:
+
+```bash
+tarmacctl get-windows | jq '.data[] | {app_name, app_bundle: .app_bundle, title}'
+```
+
+Or check with macOS tools:
+
+```bash
+# Bundle ID
+mdls -name kMDItemCFBundleIdentifier /Applications/Safari.app
+
+# App name (usually the .app filename without .app)
+```
+
+## Actions
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `floating` | bool | Force into floating state |
+| `workspace` | number/string | Assign to workspace. Number (1-10) or `"special:name"`. |
+| `geometry` | table | Set initial position and size: `{x, y, width, height}` |
+
+## Examples
+
+### Float specific apps
+
+```lua
+gar.rule({ app_name = "Calculator" }, { floating = true })
+gar.rule({ app_name = "System Settings" }, { floating = true })
+gar.rule({ app_name = "Finder" }, { floating = true })
+gar.rule({ app_name = "Archive Utility" }, { floating = true })
+gar.rule({ title = "Picture in Picture" }, { floating = true })
+```
+
+### Assign apps to workspaces
+
+```lua
+gar.rule({ app_bundle = "com.apple.Safari" }, { workspace = 2 })
+gar.rule({ app_name = "Slack" }, { workspace = 3 })
+gar.rule({ app_name = "Mail" }, { workspace = 4 })
+gar.rule({ app_name = "Spotify" }, { workspace = "special:music" })
+```
+
+### Set initial geometry for floating windows
+
+```lua
+gar.rule(
+  { app_name = "Music" },
+  { floating = true, geometry = { 200, 200, 800, 600 } }
+)
+```
+
+The geometry table is `{x, y, width, height}` in pixels.
+
+### Combine criteria
+
+```lua
+-- Only match Safari windows with a specific title
+gar.rule(
+  { app_bundle = "com.apple.Safari", title = "Developer Tools" },
+  { floating = true }
+)
+```
+
+## Rule evaluation
+
+Rules are evaluated in the order they're defined in the config. When a new window appears, tarmac checks each rule against the window's properties. The first matching rule wins — subsequent rules are not checked.
+
+Rules are checked when:
+- A new window is detected during polling
+- An existing window changes its title (re-evaluated)
+
+## Rules and config reload
+
+On config reload, all rules are replaced by the new config's rules. Existing windows are not re-evaluated against the new rules — they only apply to newly opened windows.
+
+## Debugging rules
+
+Use `RUST_LOG=tarmac=debug` to see which rules match:
+
+```bash
+RUST_LOG=tarmac=debug tarmac
+```
+
+You'll see log lines like:
+
+```
+DEBUG tarmac: rule matched: app_name="Calculator" → floating=true
+```
