@@ -1,0 +1,27 @@
+# tarmac documentation
+
+tarmac is a keyboard-driven tiling window manager for macOS, written in Rust. It uses a binary space partition (BSP) layout engine to automatically arrange your windows, and exposes a Lua configuration API and IPC socket for full control.
+
+## What tarmac does
+
+- Tiles windows automatically using BSP splits
+- Provides 10 numbered workspaces per monitor plus named scratchpads
+- Draws window borders via [ers](/docs/ers/overview), a companion border renderer
+- Accepts commands over a Unix socket (IPC) via `tarmacctl`
+- Configures entirely through a Lua file at `~/.config/tarmac/init.lua`
+- Supports window rules to auto-float or assign apps to specific workspaces
+
+## What tarmac does not do
+
+- Run on Linux or Windows — it uses macOS-specific APIs (SkyLight, Accessibility, CoreGraphics)
+- Provide a built-in status bar — use an external bar like sketchybar and set `bar_height`
+- Offer multiple layout algorithms — it's BSP-only (no master-stack, columns, or spiral)
+- Include animations or smooth transitions
+
+## Where to start
+
+If you're new to tarmac, start with [Getting Started](/docs/getting-started) to install and run it for the first time.
+
+If you're already running tarmac and want to configure it, jump to [Configuration](/docs/configuration).
+
+For scripting and automation, see [IPC](/docs/ipc) and [Events & Hooks](/docs/events-hooks).
