@@ -1,0 +1,89 @@
+# Numbered Workspaces
+
+tarmac provides 10 numbered workspaces (1–10) per monitor.
+
+## Switching workspaces
+
+```lua
+gar.bind("mod+1", "workspace 1")
+gar.bind("mod+2", "workspace 2")
+-- ... etc
+gar.bind("mod+0", "workspace 10")
+```
+
+Or generate all at once:
+
+```lua
+for i = 1, 9 do
+  gar.bind("mod+" .. i, "workspace " .. i)
+end
+gar.bind("mod+0", "workspace 10")
+```
+
+Via IPC:
+
+```bash
+tarmacctl workspace 3
+```
+
+## Moving windows to workspaces
+
+```lua
+gar.bind("mod+shift+1", "move-to-workspace 1")
+gar.bind("mod+shift+2", "move-to-workspace 2")
+-- ... etc
+```
+
+```bash
+tarmacctl move-to-workspace 5
+```
+
+The window is removed from the current workspace's BSP tree and inserted into the target workspace's tree. If the target workspace is not visible, the window is hidden.
+
+## Cycling workspaces
+
+```lua
+gar.bind("mod+tab", "workspace next")
+gar.bind("mod+shift+tab", "workspace prev")
+```
+
+This cycles through workspaces in order (1→2→3...→10→1). Empty workspaces are included in the cycle.
+
+## Workspace state
+
+Each workspace maintains:
+
+- Its own BSP tree (layout of tiled windows)
+- A list of floating windows with independent geometry
+- A focused window reference
+- Whether it's currently visible on a monitor
+
+## Assigning windows to workspaces via rules
+
+```lua
+gar.rule({ app_bundle = "com.apple.Safari" }, { workspace = 2 })
+gar.rule({ app_name = "Slack" }, { workspace = 3 })
+```
+
+When a matching window is first detected, it's placed on the specified workspace instead of the active one.
+
+## Querying workspace state
+
+Via IPC:
+
+```bash
+tarmacctl get-workspaces
+```
+
+Returns JSON with all workspaces, their window count, and which monitor they're on:
+
+```json
+{
+  "success": true,
+  "data": [
+    { "id": 1, "monitor": 0, "windows": 3, "focused": true },
+    { "id": 2, "monitor": 0, "windows": 1, "focused": false },
+    { "id": 3, "monitor": 1, "windows": 0, "focused": false }
+  ]
+}
+```
