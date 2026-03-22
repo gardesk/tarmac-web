@@ -78,6 +78,14 @@ const navigation: NavItem[] = [
     ],
   },
   {
+    title: "System Tray",
+    href: "/docs/system-tray",
+  },
+  {
+    title: "Settings Window",
+    href: "/docs/settings-window",
+  },
+  {
     title: "Events & Hooks",
     href: "/docs/events-hooks",
   },
