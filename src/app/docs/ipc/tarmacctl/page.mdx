@@ -1,0 +1,106 @@
+# tarmacctl
+
+`tarmacctl` is the command-line control tool for tarmac. It sends IPC commands to the running tarmac daemon and prints the response.
+
+## Usage
+
+```bash
+tarmacctl <command> [args...]
+```
+
+All arguments are positional. tarmacctl connects to the IPC socket, sends the command as JSON, reads the response, and exits.
+
+## Examples
+
+```bash
+# Navigation
+tarmacctl focus left
+tarmacctl focus right
+tarmacctl focus up
+tarmacctl focus down
+
+# Swap windows
+tarmacctl swap left
+tarmacctl swap down
+
+# Resize
+tarmacctl resize left
+tarmacctl resize right
+
+# Window actions
+tarmacctl close
+tarmacctl equalize
+tarmacctl toggle-floating
+
+# Workspaces
+tarmacctl workspace 3
+tarmacctl move-to-workspace 5
+tarmacctl toggle-special term
+tarmacctl move-to-special term
+
+# Config
+tarmacctl reload
+
+# Queries
+tarmacctl get-workspaces
+tarmacctl get-focused
+tarmacctl get-windows
+tarmacctl get-monitors
+tarmacctl get-tree
+tarmacctl get-tree 2
+
+# Events
+tarmacctl subscribe
+tarmacctl subscribe workspace_changed window_focused
+
+# Shell command
+tarmacctl exec "open -a Safari"
+```
+
+## Socket path
+
+tarmacctl uses the same socket discovery as tarmac:
+
+1. `$TARMAC_SOCKET` environment variable (if set)
+2. `/tmp/tarmac-$USER.sock` (default)
+
+## Output
+
+For action commands (focus, swap, etc.), tarmacctl prints nothing on success and the error message on failure.
+
+For query commands (get-*), tarmacctl prints the JSON response to stdout.
+
+## Exit codes
+
+- `0` — command succeeded
+- `1` — command failed or connection error
+
+## Use in scripts
+
+tarmacctl is designed for scripting. Combine it with other tools:
+
+```bash
+# Get the focused window's app name
+tarmacctl get-focused | jq -r '.data.app_name'
+
+# Switch to workspace only if it has windows
+ws_data=$(tarmacctl get-workspaces)
+count=$(echo "$ws_data" | jq '.data[] | select(.id == 3) | .windows')
+if [ "$count" -gt 0 ]; then
+  tarmacctl workspace 3
+fi
+```
+
+## Integration with skhd
+
+If you prefer skhd for hotkey management instead of tarmac's built-in keybinds, you can use tarmacctl as the command:
+
+```
+# .skhdrc
+cmd - h : tarmacctl focus left
+cmd - j : tarmacctl focus down
+cmd - k : tarmacctl focus up
+cmd - l : tarmacctl focus right
+```
+
+In this setup, define no keybinds in your tarmac config and let skhd handle all hotkeys.
