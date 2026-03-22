@@ -1,0 +1,32 @@
+# Keybindings
+
+tarmac is keyboard-driven. All window management operations are triggered by global hotkeys registered through `gar.bind()` in your config, or by the built-in defaults.
+
+## How keybindings work
+
+tarmac registers global hotkeys using the macOS Carbon API (`RegisterEventHotKey`). These work regardless of which application is focused — they're system-wide.
+
+When a hotkey fires, tarmac maps it to an internal action (focus, swap, resize, etc.) and executes it on the main thread.
+
+## Modifier keys
+
+tarmac uses the `mod` shorthand in keybind strings, which maps to whatever `mod_key` is set to in your config:
+
+```lua
+gar.set("mod_key", "command")  -- mod = Cmd
+gar.set("mod_key", "option")   -- mod = Option/Alt
+gar.set("mod_key", "control")  -- mod = Control
+```
+
+You can also combine explicit modifiers:
+
+```lua
+gar.bind("mod+shift+h", "swap left")      -- mod + Shift + H
+gar.bind("mod+ctrl+h", "resize left")     -- mod + Control + H
+gar.bind("ctrl+alt+l", "focus right")     -- explicit modifiers
+```
+
+## Sections
+
+- [Default Binds](/docs/keybindings/defaults) — the built-in keybindings used when no config defines any
+- [Custom Binds](/docs/keybindings/custom-binds) — how to define your own keybindings
