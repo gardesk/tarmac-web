@@ -1,0 +1,97 @@
+# Installation
+
+## Homebrew (recommended)
+
+The simplest way to install tarmac and ers:
+
+```bash
+brew tap gardesk/tap
+brew install ers
+brew install tarmac
+```
+
+> Note: the tarmac Homebrew formula is not yet available. Use the install script or build from source in the meantime.
+
+## Install script
+
+A hosted install script that detects your platform and installs the latest release:
+
+```bash
+curl -fsSL https://tarmac.musicsian.com/install.sh | bash
+```
+
+The script downloads the latest release binary for your architecture (arm64 or x86_64) and places it in `/usr/local/bin/`.
+
+To inspect the script before running:
+
+```bash
+curl -fsSL https://tarmac.musicsian.com/install.sh | less
+```
+
+## Build from source
+
+Requires the Rust toolchain. Install via [rustup](https://rustup.rs) if you don't have it:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Clone and build:
+
+```bash
+git clone https://github.com/gardesk/tarmac.git
+cd tarmac
+cargo build --release
+```
+
+The binaries will be at:
+- `./target/release/tarmac` — the window manager daemon
+- `./target/release/tarmacctl` — the CLI control tool
+
+Copy them somewhere on your `$PATH`:
+
+```bash
+sudo cp target/release/tarmac /usr/local/bin/
+sudo cp target/release/tarmacctl /usr/local/bin/
+```
+
+### Building ers separately
+
+ers is included as a git submodule. If you want borders, build it too:
+
+```bash
+git submodule update --init
+cd ers
+cargo build --release
+sudo cp target/release/ers /usr/local/bin/
+```
+
+Or install via Homebrew:
+
+```bash
+brew tap gardesk/tap
+brew install ers
+```
+
+## Dependencies
+
+tarmac has no runtime dependencies beyond macOS system frameworks. The build process links against:
+
+- **SkyLight** (private framework at `/System/Library/PrivateFrameworks/`) — window level and visibility management
+- **CoreGraphics** — display and window list APIs
+- **ApplicationServices** — accessibility framework
+- **Carbon** — global hotkey registration
+
+These are all part of macOS and do not need separate installation.
+
+## Verifying installation
+
+After installing, verify both binaries are accessible:
+
+```bash
+which tarmac
+which tarmacctl
+which ers
+```
+
+All three should return paths. If any are missing, ensure `/usr/local/bin` is in your `$PATH`.
