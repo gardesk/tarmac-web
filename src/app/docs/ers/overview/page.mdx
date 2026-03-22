@@ -1,0 +1,45 @@
+# ers Overview
+
+ers renders transparent overlay borders around macOS windows. It's a separate binary from tarmac, running as its own process.
+
+## How it works
+
+ers uses private macOS SkyLight framework APIs to:
+
+1. Create transparent overlay windows positioned around each managed window
+2. Draw colored borders with configurable width, color, and corner radius
+3. Listen for window events (move, resize, create, destroy, focus change) via SLS event registration
+4. Update border positions and colors in real-time
+
+The overlay windows are:
+- Click-through (they don't intercept mouse events)
+- Drawn at the correct window level to appear as part of the target window
+- Automatically cleaned up when ers exits (Ctrl-C)
+
+## Architecture
+
+ers has three source files (~1300 lines total):
+
+- **`main.rs`** — `BorderMap` manages overlay lifecycle. The event loop batches window events with a 150ms debounce, then processes creates, destroys, moves, and resizes. Focus detection recolors borders (active vs inactive).
+- **`skylight.rs`** — FFI bindings for SkyLight (CGS window creation, event registration), CoreGraphics (drawing), and CoreFoundation.
+- **`events.rs`** — Event enum and `SLSRegisterNotifyProc` callbacks. Filters out ers's own windows to prevent feedback loops.
+
+## Requirements
+
+- macOS (Apple Silicon or Intel)
+- Accessibility permissions (System Settings → Privacy & Security → Accessibility)
+- Tested on macOS Tahoe. Should work on Monterey and later.
+
+## Limitations
+
+- Uses private macOS APIs (SkyLight/CGS). These are undocumented and could break across macOS versions.
+- Each border overlay requires its own SLS connection (a macOS Tahoe constraint).
+- There are no configuration files — all options are passed via command-line flags.
+
+## With tarmac
+
+When `border_width > 0` in your tarmac config, tarmac spawns ers as a child process with the appropriate flags. You don't need to run ers manually. See [Configuration](/docs/ers/configuration).
+
+## Without tarmac
+
+ers works standalone. See [Standalone Use](/docs/ers/standalone).
