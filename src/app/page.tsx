@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Terminal from "@/components/Terminal";
 import ComparisonTable from "@/components/ComparisonTable";
+import FaqSchema from "@/components/FaqSchema";
 
 export const metadata: Metadata = {
   title: "tarmac — tiling window manager for macOS",
@@ -278,6 +279,8 @@ export default function Home() {
             </Link>
           </div>
         </section>
+
+        <FaqSchema />
 
         {/* Footer */}
         <footer className="border-t border-surface-200 dark:border-surface-800 bg-white/80 dark:bg-surface-950/80 backdrop-blur-md">
