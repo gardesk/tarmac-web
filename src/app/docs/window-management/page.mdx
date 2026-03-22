@@ -1,0 +1,27 @@
+# Window Management
+
+tarmac arranges windows using a binary space partition (BSP) tree. Each workspace has its own tree that recursively splits the available screen space into regions, with each leaf node holding one window.
+
+## How tiling works
+
+When you open a new window, tarmac:
+
+1. Checks if a window rule assigns it somewhere specific (or forces floating)
+2. Inserts it into the BSP tree of the active workspace
+3. Splits the focused container either vertically or horizontally, based on aspect ratio
+4. Calculates geometry for all windows in the tree
+5. Applies positions and sizes via the Accessibility API
+
+The split direction is automatic: if a container is wider than it is tall, the new window splits side-by-side (vertical split). If taller, it splits stacked (horizontal split).
+
+## Sections
+
+- [BSP Layout](/docs/window-management/bsp-layout) — how the binary space partition tree works
+- [Floating Windows](/docs/window-management/floating) — managing windows outside the tiled layout
+- [Focus, Swap & Resize](/docs/window-management/focus-swap-resize) — navigating and rearranging windows
+
+<div className="screenshot-placeholder">
+  <p className="text-lg font-medium mb-2">Screenshot: BSP layout with 4 windows</p>
+  <p className="text-sm">Four windows arranged in a BSP tree with gaps and borders</p>
+  <p className="text-xs mt-4 italic">[ placeholder — add bsp-layout.png to public/ ]</p>
+</div>
