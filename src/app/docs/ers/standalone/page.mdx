@@ -1,0 +1,101 @@
+# Standalone ers
+
+ers can run independently of tarmac. It borders all on-screen windows (or a specific window) and responds to focus changes.
+
+## Installation
+
+Via Homebrew:
+
+```bash
+brew tap gardesk/tap
+brew install ers
+```
+
+From source:
+
+```bash
+cargo install --git https://github.com/gardesk/ers
+```
+
+## Usage
+
+```
+ers [OPTIONS] [WINDOW_ID]
+```
+
+Run with no arguments to border all windows:
+
+```bash
+ers
+```
+
+Stop with Ctrl-C. All overlays are cleaned up on exit.
+
+## Options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-w, --width <PX>` | `4.0` | Border width in pixels |
+| `-r, --radius <PX>` | `10.0` | Corner radius |
+| `-c, --color <HEX>` | `#5294e2` | Active (focused) border color |
+| `-i, --inactive <HEX>` | `#59595980` | Inactive border color |
+| `--active-only` | off | Only show border on the focused window |
+| `--list` | — | List on-screen windows with IDs and bounds, then exit |
+| `-h, --help` | — | Show help |
+
+## Examples
+
+### Default borders on all windows
+
+```bash
+ers
+```
+
+### Custom colors and width
+
+```bash
+ers --width 6 --color '#ff6600' --inactive '#33333380'
+```
+
+### Active window only
+
+```bash
+ers --active-only --width 3 --color '#00ff00'
+```
+
+### Border a specific window
+
+```bash
+ers --list                    # find the window ID
+ers 1234                      # border window 1234 only
+```
+
+### With a custom radius
+
+```bash
+ers --radius 0                # square corners
+ers --radius 20               # very rounded
+```
+
+## Debug logging
+
+```bash
+RUST_LOG=debug ers
+```
+
+This prints detailed information about window events, border creation/destruction, and focus changes.
+
+## Using with other window managers
+
+ers doesn't depend on tarmac. You can use it with any macOS window manager (yabai, AeroSpace, Amethyst) or with no window manager at all. Just run it and it'll border whatever windows are on screen.
+
+## macOS Tahoe notes
+
+ers was developed on macOS Tahoe and accounts for several undocumented behaviors of the SkyLight APIs on that version:
+
+- `SLSCopyManagedDisplaySpaces` corrupts window creation on all connections — ers avoids this call
+- Each overlay requires its own SLS connection
+- Windows must be created at their final size (the 1x1-then-reshape pattern doesn't work)
+- Drawing must happen before setting window tags
+
+These constraints were discovered through trial and error. If ers stops working on a future macOS version, these are the likely breakage points.
