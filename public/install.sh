@@ -9,7 +9,6 @@
 set -euo pipefail
 
 REPO="gardesk/tarmac"
-ERS_REPO="gardesk/ers"
 INSTALL_DIR="/usr/local/bin"
 
 info() { printf '\033[0;34m%s\033[0m\n' "$1"; }
@@ -25,8 +24,8 @@ if [ "$OS" != "Darwin" ]; then
 fi
 
 case "$ARCH" in
-  arm64|aarch64) ARCH_LABEL="aarch64-apple-darwin" ;;
-  x86_64)        ARCH_LABEL="x86_64-apple-darwin" ;;
+  arm64|aarch64) ARCH_LABEL="darwin-arm64" ;;
+  x86_64)        ARCH_LABEL="darwin-x86_64" ;;
   *) error "Unsupported architecture: $ARCH" ;;
 esac
 
@@ -66,50 +65,24 @@ if curl -fsSL "$TARBALL_URL" -o "$TMPDIR/tarmac.tar.gz"; then
   if [ -w "$INSTALL_DIR" ]; then
     cp "$TMPDIR/tarmac" "$INSTALL_DIR/"
     cp "$TMPDIR/tarmacctl" "$INSTALL_DIR/" 2>/dev/null || true
+    cp "$TMPDIR/ers" "$INSTALL_DIR/" 2>/dev/null || true
   else
     sudo cp "$TMPDIR/tarmac" "$INSTALL_DIR/"
     sudo cp "$TMPDIR/tarmacctl" "$INSTALL_DIR/" 2>/dev/null || true
+    sudo cp "$TMPDIR/ers" "$INSTALL_DIR/" 2>/dev/null || true
   fi
-  sudo chmod +x "$INSTALL_DIR/tarmac" "$INSTALL_DIR/tarmacctl" 2>/dev/null || true
+  chmod +x "$INSTALL_DIR/tarmac" "$INSTALL_DIR/tarmacctl" "$INSTALL_DIR/ers" 2>/dev/null || \
+    sudo chmod +x "$INSTALL_DIR/tarmac" "$INSTALL_DIR/tarmacctl" "$INSTALL_DIR/ers" 2>/dev/null || true
 
   info "tarmac installed to $INSTALL_DIR/tarmac"
+  info "tarmacctl installed to $INSTALL_DIR/tarmacctl"
+  info "ers installed to $INSTALL_DIR/ers"
 else
   warn "Could not download pre-built binary."
   warn "You may need to build from source:"
   warn "  git clone https://github.com/$REPO.git"
   warn "  cd tarmac && cargo build --release"
   exit 1
-fi
-
-# Offer to install ers
-echo ""
-info "ers (window border renderer) is optional but recommended."
-info "Install ers? [Y/n]"
-read -r INSTALL_ERS </dev/tty 2>/dev/null || INSTALL_ERS="y"
-INSTALL_ERS=${INSTALL_ERS:-y}
-
-if [[ "$INSTALL_ERS" =~ ^[Yy] ]]; then
-  ERS_LATEST=$(curl -fsSL "https://api.github.com/repos/$ERS_REPO/releases/latest" 2>/dev/null | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/' || echo "")
-
-  if [ -n "$ERS_LATEST" ]; then
-    ERS_URL="https://github.com/$ERS_REPO/releases/download/$ERS_LATEST/ers-$ERS_LATEST-$ARCH_LABEL.tar.gz"
-    if curl -fsSL "$ERS_URL" -o "$TMPDIR/ers.tar.gz" 2>/dev/null; then
-      tar xzf "$TMPDIR/ers.tar.gz" -C "$TMPDIR"
-      if [ -w "$INSTALL_DIR" ]; then
-        cp "$TMPDIR/ers" "$INSTALL_DIR/"
-      else
-        sudo cp "$TMPDIR/ers" "$INSTALL_DIR/"
-      fi
-      sudo chmod +x "$INSTALL_DIR/ers" 2>/dev/null || true
-      info "ers installed to $INSTALL_DIR/ers"
-    else
-      warn "Could not download ers binary. Install manually:"
-      warn "  brew tap gardesk/tap && brew install ers"
-    fi
-  else
-    warn "Could not find ers releases. Install manually:"
-    warn "  brew tap gardesk/tap && brew install ers"
-  fi
 fi
 
 echo ""
