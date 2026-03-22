@@ -103,6 +103,14 @@ export default function Home() {
               title="Window rules"
               description="Match windows by app name, bundle ID, or title. Assign them to workspaces, force floating, or set initial geometry. Rules apply automatically."
             />
+            <FeatureCard
+              title="System tray & settings GUI"
+              description="Menu bar icon with workspace switching. Native settings window with sliders for gaps, borders, and toggles for mouse behavior. Changes apply live and persist to your config."
+            />
+            <FeatureCard
+              title="Rich events for bar integration"
+              description="Events carry full workspace snapshots, window metadata, and layout state. Subscribe from shell scripts or Lua callbacks to drive status bars like sketchybar."
+            />
           </div>
         </section>
 
