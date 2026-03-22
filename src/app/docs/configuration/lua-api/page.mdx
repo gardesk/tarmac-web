@@ -110,23 +110,31 @@ See [Window Rules](/docs/window-rules) for more details.
 
 ## gar.on(event, callback)
 
-Register a Lua callback for a window manager event.
+Register a Lua callback for a window manager event. Callbacks receive rich data as Lua tables.
 
 ```lua
-gar.on("window_focused", function(wid)
-  print("focused: " .. wid)
+gar.on("window_focused", function(info)
+  print("focused: " .. info.app_name .. " - " .. info.title)
 end)
 
 gar.on("workspace_changed", function(old, new)
   gar.exec("echo '" .. new .. "' > /tmp/tarmac-workspace")
 end)
 
-gar.on("monitor_focused", function(index)
-  print("monitor: " .. index)
+gar.on("window_created", function(info)
+  print("new window: " .. info.app_name)
+end)
+
+gar.on("layout_changed", function(info)
+  print("workspace " .. info.workspace .. ": " .. info.window_count .. " windows")
+end)
+
+gar.on("monitor_changed", function(info)
+  print("monitor " .. info.index)
 end)
 ```
 
-Available events: `window_focused`, `workspace_changed`, `monitor_focused`.
+Available events: `workspace_changed`, `window_focused`, `window_created`, `window_closed`, `layout_changed`, `monitor_changed`.
 
 See [Events & Hooks](/docs/events-hooks) for the full event reference.
 
