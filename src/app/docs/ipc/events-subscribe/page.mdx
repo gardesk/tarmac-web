@@ -1,6 +1,6 @@
 # Events & Subscribe
 
-The IPC server supports event subscriptions. A client can request to receive a stream of real-time events from the window manager.
+The IPC server supports event subscriptions. A client can request to receive a stream of real-time events from the window manager. Events carry rich payloads with full window and workspace metadata, designed for status bar integration.
 
 ## Subscribing
 
@@ -34,18 +34,47 @@ socat - UNIX-CONNECT:/tmp/tarmac-$USER.sock <<< '{"command":"subscribe","args":[
 
 ### workspace_changed
 
-Fired when the active workspace changes on any monitor.
+Fired when the active workspace changes on any monitor. Includes a full snapshot of all workspace states for bar integration.
 
 ```json
-{"event": "WorkspaceChanged", "data": {"old": "1", "new": "3"}}
+{
+  "event": "workspace_changed",
+  "data": {
+    "old": "1",
+    "new": "3",
+    "workspaces": [
+      { "id": "1", "active": true, "windows": 3, "monitor": 0, "urgent": false },
+      { "id": "2", "active": false, "windows": 0, "monitor": null, "urgent": false },
+      { "id": "3", "active": true, "windows": 1, "monitor": 0, "urgent": false }
+    ],
+    "focused_workspace": "3",
+    "focused_monitor": 0
+  }
+}
 ```
+
+The `workspaces` array contains every workspace with:
+- `id` — workspace identifier
+- `active` — whether it's currently visible on a monitor
+- `windows` — number of windows
+- `monitor` — which monitor it's on (null if not active)
+- `urgent` — reserved for future use (always false)
 
 ### window_focused
 
-Fired when a window gains focus.
+Fired when a window gains focus. Includes full window metadata.
 
 ```json
-{"event": "WindowFocused", "data": {"window_id": 1234, "app_name": "Firefox"}}
+{
+  "event": "window_focused",
+  "data": {
+    "window_id": 1234,
+    "title": "GitHub - Mozilla Firefox",
+    "app_name": "Firefox",
+    "app_bundle": "org.mozilla.firefox",
+    "workspace": "1"
+  }
+}
 ```
 
 ### window_created
@@ -53,7 +82,16 @@ Fired when a window gains focus.
 Fired when a new window is detected and added to management.
 
 ```json
-{"event": "WindowCreated", "data": {"window_id": 5678, "app_name": "WezTerm"}}
+{
+  "event": "window_created",
+  "data": {
+    "window_id": 5678,
+    "title": "~",
+    "app_name": "WezTerm",
+    "app_bundle": "com.github.wez.wezterm",
+    "workspace": "1"
+  }
+}
 ```
 
 ### window_closed
@@ -61,7 +99,13 @@ Fired when a new window is detected and added to management.
 Fired when a managed window closes.
 
 ```json
-{"event": "WindowClosed", "data": {"window_id": 1234}}
+{
+  "event": "window_closed",
+  "data": {
+    "window_id": 1234,
+    "app_name": "Firefox"
+  }
+}
 ```
 
 ### monitor_changed
@@ -69,7 +113,14 @@ Fired when a managed window closes.
 Fired when focus moves to a different monitor.
 
 ```json
-{"event": "MonitorChanged", "data": {"index": 1}}
+{
+  "event": "monitor_changed",
+  "data": {
+    "index": 1,
+    "monitor_count": 2,
+    "focused_workspace": "2"
+  }
+}
 ```
 
 ### layout_changed
@@ -77,15 +128,29 @@ Fired when focus moves to a different monitor.
 Fired when the layout is recalculated on a workspace (after adding/removing/resizing windows).
 
 ```json
-{"event": "LayoutChanged", "data": {"workspace": "1"}}
+{
+  "event": "layout_changed",
+  "data": {
+    "workspace": "1",
+    "window_count": 4,
+    "layout_type": "mixed"
+  }
+}
 ```
+
+`layout_type` is one of: `"tiled"`, `"floating"`, or `"mixed"` (has both tiled and floating windows).
 
 ### mode_changed
 
 Fired when the window manager mode changes.
 
 ```json
-{"event": "ModeChanged", "data": {"mode": "normal"}}
+{
+  "event": "mode_changed",
+  "data": {
+    "mode": "normal"
+  }
+}
 ```
 
 ## Filtering
@@ -106,14 +171,30 @@ tarmacctl subscribe "*"
 
 ## Use cases
 
-### Status bar integration
+### Status bar integration (sketchybar)
 
-Use event subscriptions to update an external status bar (e.g., sketchybar) when the workspace changes:
+The workspace_changed event includes a full workspace snapshot, so your bar can render all workspace indicators at once:
 
 ```bash
 tarmacctl subscribe workspace_changed | while read -r line; do
-  ws=$(echo "$line" | jq -r '.data.new')
+  # Get active workspace
+  ws=$(echo "$line" | jq -r '.data.focused_workspace')
   sketchybar --set workspace label="$ws"
+
+  # Update all workspace indicators
+  echo "$line" | jq -r '.data.workspaces[] | "\(.id) \(.active) \(.windows)"' | while read id active count; do
+    sketchybar --set "ws.$id" icon.highlight="$active" label="$count"
+  done
+done
+```
+
+### Window title in bar
+
+```bash
+tarmacctl subscribe window_focused | while read -r line; do
+  title=$(echo "$line" | jq -r '.data.title')
+  app=$(echo "$line" | jq -r '.data.app_name')
+  sketchybar --set window_title label="$app — $title"
 done
 ```
 
@@ -138,4 +219,4 @@ done
 
 ## Event bus internals
 
-The event bus is a thread-safe broadcast channel (256-event buffer). Each subscriber gets its own channel. If a subscriber falls behind and the buffer fills, it's automatically disconnected. The main thread publishes events; IPC threads consume them.
+The event bus is a thread-safe broadcast channel (256-event buffer per subscriber). Each subscriber gets its own `sync_channel`. If a subscriber falls behind and the buffer fills, it's automatically disconnected. The main thread publishes events; IPC threads consume them.
