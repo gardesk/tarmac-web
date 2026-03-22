@@ -1,0 +1,18 @@
+# IPC
+
+tarmac exposes a full IPC (inter-process communication) interface over a Unix domain socket. External tools, scripts, and the `tarmacctl` CLI can send commands and receive events.
+
+## Overview
+
+The IPC system provides:
+
+- **Command execution** — focus, swap, resize, workspace management, etc.
+- **State queries** — get windows, workspaces, monitors, layout trees
+- **Event subscription** — real-time stream of workspace changes, window focus, etc.
+
+## Sections
+
+- [Socket & Protocol](/docs/ipc/socket-protocol) — socket location, JSON wire format, permissions
+- [tarmacctl](/docs/ipc/tarmacctl) — the CLI control tool
+- [Commands](/docs/ipc/commands) — complete command reference
+- [Events & Subscribe](/docs/ipc/events-subscribe) — subscribing to real-time events
