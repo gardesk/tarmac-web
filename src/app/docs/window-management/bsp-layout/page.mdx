@@ -1,0 +1,107 @@
+# BSP Layout
+
+tarmac uses a binary space partition (BSP) tree to arrange tiled windows. This is the same approach used by bspwm and yabai.
+
+## What is a BSP tree?
+
+A BSP tree is a binary tree where:
+
+- **Internal nodes** represent a split — either vertical (left/right) or horizontal (top/bottom)
+- **Leaf nodes** represent a window
+
+Each internal node has a **split ratio** (default 0.5, meaning 50/50) that determines how the available space is divided between its two children.
+
+## Split direction
+
+When a new window is added, tarmac splits the focused leaf node into two. The split direction is chosen automatically based on the container's aspect ratio:
+
+- **Container is wider than tall** → vertical split (windows side by side)
+- **Container is taller than wide** → horizontal split (windows stacked)
+
+This produces a natural-looking layout where narrow spaces stack vertically and wide spaces divide horizontally.
+
+## Example tree
+
+With 4 windows (A, B, C, D), the tree might look like:
+
+```
+         [V 0.5]
+        /       \
+    [H 0.5]      [H 0.5]
+    /    \        /    \
+   A      B      C      D
+```
+
+This produces:
+
+```
+┌──────────┬──────────┐
+│    A     │    C     │
+├──────────┼──────────┤
+│    B     │    D     │
+└──────────┴──────────┘
+```
+
+## Geometry calculation
+
+tarmac calculates window geometry by recursively traversing the tree:
+
+1. Start with the full usable screen area (minus `gap_outer` and `bar_height`)
+2. At each internal node, split the area according to the split direction and ratio
+3. Apply `gap_inner` spacing between siblings
+4. At each leaf, the remaining area becomes the window's geometry
+5. Apply the geometry via the Accessibility API (set size, then position, then size again)
+
+The size-position-size order is a workaround for macOS apps that have minimum sizes or resist resizing — the second size call ensures the window fills its designated area.
+
+## Split ratios
+
+By default, every split is 50/50. You can adjust ratios using the resize action:
+
+```lua
+gar.bind("mod+ctrl+h", "resize left")
+gar.bind("mod+ctrl+l", "resize right")
+gar.bind("mod+ctrl+j", "resize down")
+gar.bind("mod+ctrl+k", "resize up")
+```
+
+Resizing moves the nearest split divider in the specified direction, redistributing space between the two sides.
+
+## Equalize
+
+Reset all split ratios in the current workspace to 0.5:
+
+```lua
+gar.bind("mod+e", "equalize")
+```
+
+Or via IPC:
+
+```bash
+tarmacctl equalize
+```
+
+## Oversized windows
+
+Some macOS apps have minimum window sizes that exceed the space allocated by the tree. tarmac handles this by:
+
+1. Checking the window's actual minimum size via the Accessibility API
+2. If the window is larger than its tile after positioning, attempting to swap with its sibling
+3. If swapping doesn't help, automatically floating the window
+
+This prevents layout corruption from apps that refuse to shrink to the requested size.
+
+## Gaps
+
+Gaps are applied during geometry calculation. `gap_outer` creates space at the screen edges; `gap_inner` creates space between adjacent windows.
+
+```lua
+gar.set("gap_inner", "8")    -- 8px between windows
+gar.set("gap_outer", "12")   -- 12px at screen edges
+```
+
+<div className="screenshot-placeholder">
+  <p className="text-lg font-medium mb-2">Screenshot: Gap comparison</p>
+  <p className="text-sm">Left: no gaps. Right: inner=8, outer=12</p>
+  <p className="text-xs mt-4 italic">[ placeholder — add gaps-comparison.png to public/ ]</p>
+</div>
