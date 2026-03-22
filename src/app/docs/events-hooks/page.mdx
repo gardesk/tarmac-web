@@ -1,25 +1,22 @@
 # Events & Hooks
 
-tarmac has two event systems: **Lua callbacks** (defined in your config) and **IPC event subscriptions** (for external tools).
+tarmac has two event systems: **Lua callbacks** (defined in your config) and **IPC event subscriptions** (for external tools). Both now carry rich payloads with detailed window and workspace metadata, designed for bar integration.
 
 ## Lua event callbacks
 
-Register callbacks in your config with `gar.on()`:
+Register callbacks in your config with `gar.on()`. Callbacks receive Lua tables with structured data:
 
 ```lua
-gar.on("window_focused", function(wid)
-  -- wid is the window ID (number)
-  print("focused window: " .. wid)
+gar.on("window_focused", function(info)
+  print("focused: " .. info.app_name .. " - " .. info.title)
 end)
 
 gar.on("workspace_changed", function(old, new)
-  -- old and new are workspace names (strings)
-  gar.exec("echo '" .. new .. "' > /tmp/tarmac-ws")
+  gar.exec("sketchybar --set workspace label='" .. new .. "'")
 end)
 
-gar.on("monitor_focused", function(index)
-  -- index is the monitor index (number)
-  print("monitor: " .. index)
+gar.on("monitor_changed", function(info)
+  print("monitor " .. info.index .. " workspace " .. info.focused_workspace)
 end)
 ```
 
@@ -27,20 +24,67 @@ end)
 
 | Event | Arguments | Description |
 |-------|-----------|-------------|
-| `window_focused` | `window_id` | A window gained focus |
-| `workspace_changed` | `old`, `new` | Active workspace changed |
-| `monitor_focused` | `index` | Focus moved to a different monitor |
+| `workspace_changed` | `old` (string), `new` (string) | Active workspace changed |
+| `window_focused` | `info` (table) | A window gained focus |
+| `window_created` | `info` (table) | A new window appeared |
+| `window_closed` | `info` (table) | A window was closed |
+| `layout_changed` | `info` (table) | Layout recalculated on a workspace |
+| `monitor_changed` | `info` (table) | Focus moved to a different monitor |
+
+### Callback data fields
+
+**window_focused / window_created:**
+
+```lua
+gar.on("window_focused", function(info)
+  info.window_id    -- number: window ID
+  info.title        -- string: window title
+  info.app_name     -- string: application name
+  info.app_bundle   -- string: bundle identifier
+  info.workspace    -- string: workspace ID
+end)
+```
+
+**window_closed:**
+
+```lua
+gar.on("window_closed", function(info)
+  info.window_id    -- number: window ID
+  info.app_name     -- string: application name
+end)
+```
+
+**layout_changed:**
+
+```lua
+gar.on("layout_changed", function(info)
+  info.workspace    -- string: workspace ID
+  info.window_count -- number: total windows
+  info.layout_type  -- string: "tiled", "floating", or "mixed"
+end)
+```
+
+**monitor_changed:**
+
+```lua
+gar.on("monitor_changed", function(info)
+  info.index              -- number: monitor index (0-based)
+  info.monitor_count      -- number: total monitors
+  info.focused_workspace  -- string: workspace on this monitor
+end)
+```
 
 ### Callback behavior
 
 - Callbacks run on the main thread, so they block the event loop briefly. Keep them fast.
 - `gar.exec()` within a callback runs asynchronously (spawns a shell) and doesn't block.
+- JSON data from IPC events is converted to native Lua tables automatically.
 - If a callback errors, the error is logged and tarmac continues.
 - On config reload, all old callbacks are dropped and new ones are registered.
 
 ### Use cases
 
-#### Update a status bar
+#### Update a status bar (sketchybar)
 
 ```lua
 gar.on("workspace_changed", function(old, new)
@@ -48,41 +92,51 @@ gar.on("workspace_changed", function(old, new)
 end)
 ```
 
-#### Autostart an app on workspace switch
+#### Log focus with app details
 
 ```lua
-gar.on("workspace_changed", function(old, new)
-  if new == "3" then
-    gar.exec_once("open -a Slack")
+gar.on("window_focused", function(info)
+  local msg = info.app_name .. ": " .. info.title
+  gar.exec("echo '" .. msg .. "' >> /tmp/tarmac-focus.log")
+end)
+```
+
+#### Auto-float newly created windows from specific apps
+
+```lua
+gar.on("window_created", function(info)
+  if info.app_name == "Preview" then
+    -- Handled better via gar.rule(), but possible here
+    print("Preview window created: " .. info.title)
   end
 end)
 ```
 
-#### Log focus changes
+#### Track layout changes
 
 ```lua
-gar.on("window_focused", function(wid)
-  gar.exec("echo $(date) wid=" .. wid .. " >> /tmp/tarmac-focus.log")
+gar.on("layout_changed", function(info)
+  if info.layout_type == "floating" then
+    print("workspace " .. info.workspace .. " is all floating")
+  end
 end)
 ```
 
 ## IPC event subscriptions
 
-For more event types and external tool integration, use IPC subscriptions. See [Events & Subscribe](/docs/ipc/events-subscribe).
+For external tool integration, use IPC subscriptions. See [Events & Subscribe](/docs/ipc/events-subscribe).
 
-IPC subscriptions provide more event types than Lua callbacks:
+All events are now available in both systems:
 
-| IPC Event | Lua Callback |
-|-----------|-------------|
-| `workspace_changed` | `workspace_changed` |
-| `window_focused` | `window_focused` |
-| `window_created` | — |
-| `window_closed` | — |
-| `monitor_changed` | `monitor_focused` |
-| `layout_changed` | — |
-| `mode_changed` | — |
-
-If you need `window_created`, `window_closed`, or `layout_changed`, use IPC subscriptions.
+| Event | Lua | IPC |
+|-------|-----|-----|
+| `workspace_changed` | yes | yes |
+| `window_focused` | yes | yes |
+| `window_created` | yes | yes |
+| `window_closed` | yes | yes |
+| `monitor_changed` | yes | yes |
+| `layout_changed` | yes | yes |
+| `mode_changed` | — | yes |
 
 ## Combining both
 
@@ -96,8 +150,8 @@ end)
 ```
 
 ```bash
-# External process for detailed logging
-tarmacctl subscribe | while read -r line; do
-  echo "$(date): $line" >> /var/log/tarmac-events.log
+# External process with rich data
+tarmacctl subscribe workspace_changed | while read -r line; do
+  echo "$line" | jq '.data.workspaces[] | select(.active) | .id'
 done
 ```
