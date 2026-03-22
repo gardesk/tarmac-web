@@ -3,6 +3,7 @@ import Link from "next/link";
 import Terminal from "@/components/Terminal";
 import ComparisonTable from "@/components/ComparisonTable";
 import FaqSchema from "@/components/FaqSchema";
+import ProgressiveHero from "@/components/ProgressiveHero";
 
 export const metadata: Metadata = {
   title: "tarmac — tiling window manager for macOS",
@@ -32,7 +33,7 @@ function FeatureCard({
 
 export default function Home() {
   return (
-    <div className="hero-bg min-h-screen">
+    <ProgressiveHero>
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-white/80 dark:bg-surface-950/80 backdrop-blur-md border-b border-surface-200 dark:border-surface-800">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -295,6 +296,6 @@ export default function Home() {
           </div>
         </footer>
       </div>
-    </div>
+    </ProgressiveHero>
   );
 }
