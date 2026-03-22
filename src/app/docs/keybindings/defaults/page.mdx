@@ -1,0 +1,84 @@
+# Default Keybindings
+
+These keybindings are active when your config defines no `gar.bind()` calls. As soon as you define any keybind in your config, the defaults are completely replaced — you need to explicitly bind everything you want.
+
+All keybinds below use `mod` as the modifier, which defaults to Command.
+
+## Basic actions
+
+| Keybind | Action |
+|---------|--------|
+| `mod + Return` | Spawn terminal |
+| `mod + Shift + Q` | Close focused window |
+| `mod + E` | Equalize all split ratios |
+| `mod + Shift + Space` | Toggle floating |
+
+## Focus (vim keys)
+
+| Keybind | Action |
+|---------|--------|
+| `mod + H` | Focus left |
+| `mod + J` | Focus down |
+| `mod + K` | Focus up |
+| `mod + L` | Focus right |
+
+## Focus (arrow keys)
+
+| Keybind | Action |
+|---------|--------|
+| `mod + Left` | Focus left |
+| `mod + Down` | Focus down |
+| `mod + Up` | Focus up |
+| `mod + Right` | Focus right |
+
+## Swap (vim keys)
+
+| Keybind | Action |
+|---------|--------|
+| `mod + Shift + H` | Swap left |
+| `mod + Shift + J` | Swap down |
+| `mod + Shift + K` | Swap up |
+| `mod + Shift + L` | Swap right |
+
+## Swap (arrow keys)
+
+| Keybind | Action |
+|---------|--------|
+| `mod + Shift + Left` | Swap left |
+| `mod + Shift + Down` | Swap down |
+| `mod + Shift + Up` | Swap up |
+| `mod + Shift + Right` | Swap right |
+
+## Resize
+
+| Keybind | Action |
+|---------|--------|
+| `mod + Ctrl + H` | Resize left |
+| `mod + Ctrl + J` | Resize down |
+| `mod + Ctrl + K` | Resize up |
+| `mod + Ctrl + L` | Resize right |
+
+## Workspaces
+
+| Keybind | Action |
+|---------|--------|
+| `mod + 1` through `mod + 9` | Switch to workspace 1-9 |
+| `mod + 0` | Switch to workspace 10 |
+| `mod + Shift + 1` through `mod + Shift + 9` | Move window to workspace 1-9 |
+| `mod + Shift + 0` | Move window to workspace 10 |
+
+## Config
+
+| Keybind | Action |
+|---------|--------|
+| `mod + Shift + R` | Reload config |
+
+## Not bound by default
+
+These actions exist but have no default keybind. Add them in your config if you want them:
+
+- `toggle-special NAME` — toggle scratchpad
+- `move-to-special NAME` — send window to scratchpad
+- `focus-monitor next|prev` — cycle monitors
+- `move-to-monitor next|prev` — move window between monitors
+- `workspace next|prev` — cycle workspaces
