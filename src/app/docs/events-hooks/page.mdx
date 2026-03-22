@@ -1,0 +1,103 @@
+# Events & Hooks
+
+tarmac has two event systems: **Lua callbacks** (defined in your config) and **IPC event subscriptions** (for external tools).
+
+## Lua event callbacks
+
+Register callbacks in your config with `gar.on()`:
+
+```lua
+gar.on("window_focused", function(wid)
+  -- wid is the window ID (number)
+  print("focused window: " .. wid)
+end)
+
+gar.on("workspace_changed", function(old, new)
+  -- old and new are workspace names (strings)
+  gar.exec("echo '" .. new .. "' > /tmp/tarmac-ws")
+end)
+
+gar.on("monitor_focused", function(index)
+  -- index is the monitor index (number)
+  print("monitor: " .. index)
+end)
+```
+
+### Available Lua events
+
+| Event | Arguments | Description |
+|-------|-----------|-------------|
+| `window_focused` | `window_id` | A window gained focus |
+| `workspace_changed` | `old`, `new` | Active workspace changed |
+| `monitor_focused` | `index` | Focus moved to a different monitor |
+
+### Callback behavior
+
+- Callbacks run on the main thread, so they block the event loop briefly. Keep them fast.
+- `gar.exec()` within a callback runs asynchronously (spawns a shell) and doesn't block.
+- If a callback errors, the error is logged and tarmac continues.
+- On config reload, all old callbacks are dropped and new ones are registered.
+
+### Use cases
+
+#### Update a status bar
+
+```lua
+gar.on("workspace_changed", function(old, new)
+  gar.exec("sketchybar --set workspace label='" .. new .. "'")
+end)
+```
+
+#### Autostart an app on workspace switch
+
+```lua
+gar.on("workspace_changed", function(old, new)
+  if new == "3" then
+    gar.exec_once("open -a Slack")
+  end
+end)
+```
+
+#### Log focus changes
+
+```lua
+gar.on("window_focused", function(wid)
+  gar.exec("echo $(date) wid=" .. wid .. " >> /tmp/tarmac-focus.log")
+end)
+```
+
+## IPC event subscriptions
+
+For more event types and external tool integration, use IPC subscriptions. See [Events & Subscribe](/docs/ipc/events-subscribe).
+
+IPC subscriptions provide more event types than Lua callbacks:
+
+| IPC Event | Lua Callback |
+|-----------|-------------|
+| `workspace_changed` | `workspace_changed` |
+| `window_focused` | `window_focused` |
+| `window_created` | — |
+| `window_closed` | — |
+| `monitor_changed` | `monitor_focused` |
+| `layout_changed` | — |
+| `mode_changed` | — |
+
+If you need `window_created`, `window_closed`, or `layout_changed`, use IPC subscriptions.
+
+## Combining both
+
+You can use both systems simultaneously. Lua callbacks are convenient for quick reactions inside the config. IPC subscriptions are better for long-running external processes.
+
+```lua
+-- Quick reaction in config
+gar.on("workspace_changed", function(old, new)
+  gar.exec("sketchybar --set workspace label='" .. new .. "'")
+end)
+```
+
+```bash
+# External process for detailed logging
+tarmacctl subscribe | while read -r line; do
+  echo "$(date): $line" >> /var/log/tarmac-events.log
+done
+```
