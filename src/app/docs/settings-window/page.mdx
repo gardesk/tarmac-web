@@ -1,0 +1,99 @@
+# Settings Window
+
+tarmac includes a native macOS settings window for adjusting configuration visually. Open it from the [system tray](/docs/system-tray) menu by clicking **Settings...**.
+
+<div className="screenshot-placeholder">
+  <p className="text-lg font-medium mb-2">Screenshot: Settings window</p>
+  <p className="text-sm">The tarmac settings window showing the General tab</p>
+  <p className="text-xs mt-4 italic">[ placeholder — add settings-window.png to public/ ]</p>
+</div>
+
+## Tabs
+
+The settings window has four tabs: **General**, **Keybindings**, **Rules**, and **About**.
+
+## General tab
+
+The General tab provides live controls for all core settings. Changes take effect immediately and are persisted to your `~/.config/tarmac/init.lua`.
+
+### Layout section
+
+| Control | Range | Description |
+|---------|-------|-------------|
+| Inner Gap | 0–50px (slider) | Space between adjacent windows |
+| Outer Gap | 0–50px (slider) | Space between windows and screen edges |
+| Bar Height | 0–60px (slider) | Reserved space at top for external status bars |
+
+### Borders section
+
+| Control | Range | Description |
+|---------|-------|-------------|
+| Width | 0–10px (slider) | Border thickness. 0 disables ers. |
+| Radius | 0–30px (slider) | Corner radius for borders |
+| Focused Color | color picker | Border color for the focused window |
+| Unfocused Color | color picker | Border color for unfocused windows |
+
+### Behavior section
+
+| Control | Type | Description |
+|---------|------|-------------|
+| Focus follows mouse | checkbox | Auto-focus window under cursor |
+| Mouse follows focus | checkbox | Warp cursor to newly focused window |
+
+### Modifier key
+
+A dropdown to select the primary modifier key:
+- **Command** (default)
+- **Option**
+- **Control**
+
+## Keybindings tab
+
+Displays all currently configured keybindings in a read-only list. Shows the key combination and action side by side.
+
+If no keybindings are configured in your Lua config, it shows "No keybindings configured." (the built-in defaults still work but aren't displayed here since they're implicit).
+
+## Rules tab
+
+Displays all window rules in a read-only list. Shows match criteria and actions.
+
+If no rules are defined, it shows "No window rules configured."
+
+## About tab
+
+Shows:
+- Application name and version (from Cargo.toml)
+- Build info: "Rust 2024 edition · objc2 + SkyLight"
+- GitHub repository link
+- Config file path (`~/.config/tarmac/init.lua`)
+
+## Persistence
+
+When you change a setting through the GUI:
+
+1. The change takes effect immediately (layout is recalculated, borders are updated, etc.)
+2. The corresponding `gar.set()` line in your `init.lua` is updated via regex pattern matching
+3. If the setting line doesn't exist in your config file, the change is applied in memory but not written to disk
+
+This means the settings window works best when your `init.lua` already contains `gar.set()` calls for the settings you want to adjust. Example:
+
+```lua
+-- These lines will be updated by the settings window
+gar.set("gap_inner", "8")
+gar.set("gap_outer", "8")
+gar.set("border_width", "4")
+gar.set("border_color_focused", "#5294e2")
+gar.set("focus_follows_mouse", "true")
+```
+
+If you later open the settings window and change the inner gap to 12, the line becomes:
+
+```lua
+gar.set("gap_inner", "12")
+```
+
+## Opening the settings window
+
+The settings window is opened from the tray menu (**Settings...**). If the window is already open, clicking Settings again brings it to the front.
+
+The window is non-modal — you can continue using other apps while it's open.
