@@ -1,0 +1,103 @@
+# Socket & Protocol
+
+## Socket location
+
+By default, the IPC socket is at:
+
+```
+/tmp/tarmac-$USER.sock
+```
+
+For example, `/tmp/tarmac-alice.sock`.
+
+Override with the `TARMAC_SOCKET` environment variable:
+
+```bash
+TARMAC_SOCKET=/tmp/my-tarmac.sock tarmac
+```
+
+## Permissions
+
+The socket is created with mode `0600` (owner read/write only). Only the user who started tarmac can connect to it.
+
+## Protocol
+
+The protocol is line-based JSON. Each request and response is a single JSON object terminated by a newline (`\n`).
+
+### Request format
+
+```json
+{"command": "focus", "args": ["left"]}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `command` | string | yes | The command name |
+| `args` | string[] | no | Command arguments (defaults to `[]`) |
+
+### Response format
+
+```json
+{"success": true, "data": {...}, "error": null}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | bool | Whether the command succeeded |
+| `data` | any/null | Response data (for query commands) |
+| `error` | string/null | Error message if `success` is false |
+
+### Examples
+
+Successful command:
+
+```json
+→ {"command":"workspace","args":["3"]}
+← {"success":true}
+```
+
+Query with data:
+
+```json
+→ {"command":"get-focused","args":[]}
+← {"success":true,"data":{"window_id":1234,"app_name":"Firefox","title":"Home"}}
+```
+
+Error:
+
+```json
+→ {"command":"invalid","args":[]}
+← {"success":false,"error":"unknown command: invalid"}
+```
+
+## Raw socket access
+
+You can interact with the socket directly using `socat` or `nc`:
+
+```bash
+echo '{"command":"get-workspaces","args":[]}' | socat - UNIX-CONNECT:/tmp/tarmac-$USER.sock
+```
+
+Or keep a connection open for multiple commands:
+
+```bash
+socat READLINE UNIX-CONNECT:/tmp/tarmac-$USER.sock
+```
+
+Then type JSON requests interactively.
+
+## Timeouts
+
+If a command doesn't complete within 5 seconds, the IPC server returns a timeout error:
+
+```json
+{"success": false, "error": "command timed out"}
+```
+
+This prevents stalled commands from blocking other IPC clients.
+
+## Connection lifecycle
+
+Each IPC connection can send multiple requests sequentially. The connection stays open until the client closes it or the daemon shuts down.
+
+The one exception is the `subscribe` command, which switches the connection into streaming mode — see [Events & Subscribe](/docs/ipc/events-subscribe).
