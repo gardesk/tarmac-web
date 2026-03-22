@@ -1,0 +1,144 @@
+# Custom Keybindings
+
+Define your own keybindings in `~/.config/tarmac/init.lua` using `gar.bind()`. As soon as you define any keybind, the defaults are completely replaced.
+
+## Syntax
+
+```lua
+gar.bind("modifiers+key", "action")
+```
+
+The first argument is a key combination string. The second is an action string.
+
+## Modifiers
+
+| Modifier | Aliases | macOS Key |
+|----------|---------|-----------|
+| `mod` | — | Whatever `mod_key` is set to |
+| `shift` | — | Shift |
+| `ctrl` | `control` | Control |
+| `alt` | `option` | Option |
+| `fn` | — | Fn |
+
+Combine with `+`:
+
+```lua
+gar.bind("mod+shift+h", "swap left")
+gar.bind("ctrl+alt+l", "focus right")
+```
+
+## Key names
+
+### Letters and numbers
+`a` through `z`, `0` through `9`
+
+### Special keys
+`return`, `space`, `tab`, `escape`, `delete`, `grave` (backtick), `minus`, `equal`, `leftbracket`, `rightbracket`, `semicolon`, `quote`, `comma`, `period`, `slash`, `backslash`
+
+### Arrow keys
+`left`, `right`, `up`, `down`
+
+### Function keys
+`f1` through `f12`
+
+## Action reference
+
+### Navigation
+
+```lua
+gar.bind("mod+h", "focus left")
+gar.bind("mod+j", "focus down")
+gar.bind("mod+k", "focus up")
+gar.bind("mod+l", "focus right")
+```
+
+### Swap windows
+
+```lua
+gar.bind("mod+shift+h", "swap left")
+gar.bind("mod+shift+j", "swap down")
+gar.bind("mod+shift+k", "swap up")
+gar.bind("mod+shift+l", "swap right")
+```
+
+### Resize splits
+
+```lua
+gar.bind("mod+ctrl+h", "resize left")
+gar.bind("mod+ctrl+j", "resize down")
+gar.bind("mod+ctrl+k", "resize up")
+gar.bind("mod+ctrl+l", "resize right")
+```
+
+### Window actions
+
+```lua
+gar.bind("mod+shift+q", "close")
+gar.bind("mod+e", "equalize")
+gar.bind("mod+shift+space", "toggle-floating")
+```
+
+### Workspaces
+
+```lua
+gar.bind("mod+1", "workspace 1")
+gar.bind("mod+shift+1", "move-to-workspace 1")
+gar.bind("mod+tab", "workspace next")
+gar.bind("mod+shift+tab", "workspace prev")
+```
+
+### Special workspaces (scratchpads)
+
+```lua
+gar.bind("mod+grave", "toggle-special term")
+gar.bind("mod+shift+grave", "move-to-special term")
+```
+
+### Monitors
+
+```lua
+gar.bind("mod+comma", "focus-monitor prev")
+gar.bind("mod+period", "focus-monitor next")
+gar.bind("mod+shift+comma", "move-to-monitor prev")
+gar.bind("mod+shift+period", "move-to-monitor next")
+```
+
+### Spawning and config
+
+```lua
+gar.bind("mod+return", "spawn terminal")
+gar.bind("mod+shift+r", "reload")
+```
+
+## Tips
+
+### Generate workspace binds with a loop
+
+```lua
+for i = 1, 9 do
+  gar.bind("mod+" .. i, "workspace " .. i)
+  gar.bind("mod+shift+" .. i, "move-to-workspace " .. i)
+end
+gar.bind("mod+0", "workspace 10")
+gar.bind("mod+shift+0", "move-to-workspace 10")
+```
+
+### Use both vim keys and arrows
+
+```lua
+local dirs = { h = "left", j = "down", k = "up", l = "right" }
+for key, dir in pairs(dirs) do
+  gar.bind("mod+" .. key, "focus " .. dir)
+  gar.bind("mod+shift+" .. key, "swap " .. dir)
+  gar.bind("mod+ctrl+" .. key, "resize " .. dir)
+end
+```
+
+### Conflicts with macOS shortcuts
+
+Some key combinations are reserved by macOS (e.g., Cmd+Q to quit, Cmd+Tab to switch apps). tarmac registers its hotkeys at a higher priority, so they will intercept these. Be aware:
+
+- If you bind `mod+q` (with `mod_key = "command"`), pressing Cmd+Q will trigger tarmac's action instead of quitting the app. Use `mod+shift+q` for close instead.
+- Cmd+H (hide app) and Cmd+M (minimize) will also be intercepted if you bind them.
+
+Consider using `option` as your `mod_key` if you want to preserve standard macOS shortcuts.
