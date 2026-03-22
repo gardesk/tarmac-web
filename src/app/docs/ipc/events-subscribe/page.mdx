@@ -1,0 +1,141 @@
+# Events & Subscribe
+
+The IPC server supports event subscriptions. A client can request to receive a stream of real-time events from the window manager.
+
+## Subscribing
+
+Send the `subscribe` command to switch a connection into streaming mode:
+
+```bash
+tarmacctl subscribe
+```
+
+Or filter by specific event types:
+
+```bash
+tarmacctl subscribe workspace_changed window_focused
+```
+
+Once subscribed, the connection stays open and events are streamed as JSON lines.
+
+### Raw socket subscription
+
+```bash
+echo '{"command":"subscribe","args":["workspace_changed","window_focused"]}' | socat - UNIX-CONNECT:/tmp/tarmac-$USER.sock
+```
+
+For an indefinite subscription:
+
+```bash
+socat - UNIX-CONNECT:/tmp/tarmac-$USER.sock <<< '{"command":"subscribe","args":[]}'
+```
+
+## Event types
+
+### workspace_changed
+
+Fired when the active workspace changes on any monitor.
+
+```json
+{"event": "WorkspaceChanged", "data": {"old": "1", "new": "3"}}
+```
+
+### window_focused
+
+Fired when a window gains focus.
+
+```json
+{"event": "WindowFocused", "data": {"window_id": 1234, "app_name": "Firefox"}}
+```
+
+### window_created
+
+Fired when a new window is detected and added to management.
+
+```json
+{"event": "WindowCreated", "data": {"window_id": 5678, "app_name": "WezTerm"}}
+```
+
+### window_closed
+
+Fired when a managed window closes.
+
+```json
+{"event": "WindowClosed", "data": {"window_id": 1234}}
+```
+
+### monitor_changed
+
+Fired when focus moves to a different monitor.
+
+```json
+{"event": "MonitorChanged", "data": {"index": 1}}
+```
+
+### layout_changed
+
+Fired when the layout is recalculated on a workspace (after adding/removing/resizing windows).
+
+```json
+{"event": "LayoutChanged", "data": {"workspace": "1"}}
+```
+
+### mode_changed
+
+Fired when the window manager mode changes.
+
+```json
+{"event": "ModeChanged", "data": {"mode": "normal"}}
+```
+
+## Filtering
+
+Pass event type names as arguments to `subscribe` to only receive those events:
+
+```bash
+tarmacctl subscribe workspace_changed
+tarmacctl subscribe window_focused window_closed
+```
+
+Pass no arguments (or `*`) to receive all events:
+
+```bash
+tarmacctl subscribe
+tarmacctl subscribe "*"
+```
+
+## Use cases
+
+### Status bar integration
+
+Use event subscriptions to update an external status bar (e.g., sketchybar) when the workspace changes:
+
+```bash
+tarmacctl subscribe workspace_changed | while read -r line; do
+  ws=$(echo "$line" | jq -r '.data.new')
+  sketchybar --set workspace label="$ws"
+done
+```
+
+### Activity logging
+
+```bash
+tarmacctl subscribe window_focused | while read -r line; do
+  echo "$(date): $line" >> /tmp/tarmac-activity.log
+done
+```
+
+### Custom focus behavior
+
+```bash
+tarmacctl subscribe window_focused | while read -r line; do
+  app=$(echo "$line" | jq -r '.data.app_name')
+  if [ "$app" = "Finder" ]; then
+    tarmacctl toggle-floating
+  fi
+done
+```
+
+## Event bus internals
+
+The event bus is a thread-safe broadcast channel (256-event buffer). Each subscriber gets its own channel. If a subscriber falls behind and the buffer fills, it's automatically disconnected. The main thread publishes events; IPC threads consume them.
