@@ -1,0 +1,39 @@
+# Getting Started
+
+This section covers everything you need to install tarmac, grant it the required permissions, and start tiling your windows.
+
+## Overview
+
+tarmac runs as a background daemon on macOS. Once started, it:
+
+1. Discovers all open windows across all monitors
+2. Arranges them in a BSP (binary space partition) layout
+3. Listens for keyboard shortcuts to focus, swap, resize, and manage windows
+4. Accepts IPC commands over a Unix socket
+
+## Requirements
+
+- macOS 12 (Monterey) or later. Tested on Monterey, Ventura, Sonoma, and Tahoe.
+- Apple Silicon or Intel Mac
+- Accessibility permissions (required for window manipulation)
+- Rust toolchain if building from source
+
+## Quick install
+
+The fastest way to get started:
+
+```bash
+curl -fsSL https://tarmac.musicsian.com/install.sh | bash
+```
+
+Or via Homebrew:
+
+```bash
+brew tap gardesk/tap
+brew install ers
+brew install tarmac
+```
+
+See [Installation](/docs/getting-started/installation) for all installation methods.
+
+After installing, grant Accessibility permissions and run `tarmac`. See [First Run](/docs/getting-started/first-run) for details.
