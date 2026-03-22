@@ -1,0 +1,115 @@
+# Configuration
+
+tarmac is configured through a single Lua file at `~/.config/tarmac/init.lua`. This file is executed once at startup and again on every hot reload.
+
+## Config location
+
+tarmac looks for its config at:
+
+```
+~/.config/tarmac/init.lua
+```
+
+If the file doesn't exist, tarmac uses built-in defaults and logs a warning. It creates the `~/.config/tarmac/` directory if needed.
+
+## Config structure
+
+The config file is plain Lua 5.4. tarmac exposes a global `gar` table with functions for setting options, binding keys, defining window rules, registering event callbacks, and configuring special workspaces.
+
+A minimal config:
+
+```lua
+-- Modifier key: "command", "option", or "control"
+gar.set("mod_key", "command")
+
+-- Gaps between windows and screen edges
+gar.set("gap_inner", "8")
+gar.set("gap_outer", "8")
+
+-- Keybindings
+gar.bind("mod+return", "spawn terminal")
+gar.bind("mod+h", "focus left")
+gar.bind("mod+l", "focus right")
+gar.bind("mod+shift+q", "close")
+```
+
+## What you can configure
+
+- **[Settings](/docs/configuration/settings)** — gap sizes, modifier key, mouse behavior, terminal command, bar height, border styling
+- **[Lua API](/docs/configuration/lua-api)** — the `gar` table: `gar.set()`, `gar.bind()`, `gar.rule()`, `gar.on()`, `gar.exec()`, `gar.special_workspace()`
+- **[Hot Reload](/docs/configuration/hot-reload)** — reload your config without restarting tarmac
+
+## Full example config
+
+```lua
+-- ~/.config/tarmac/init.lua
+
+-- Basics
+gar.set("mod_key", "command")
+gar.set("gap_inner", "8")
+gar.set("gap_outer", "8")
+gar.set("focus_follows_mouse", "true")
+gar.set("mouse_follows_focus", "true")
+gar.set("terminal", "open -na WezTerm")
+gar.set("bar_height", "32")
+
+-- Borders (requires ers)
+gar.set("border_width", "4")
+gar.set("border_color_focused", "#5294e2")
+gar.set("border_color_unfocused", "#2d2d2d")
+gar.set("border_radius", "10")
+
+-- Navigation
+gar.bind("mod+h", "focus left")
+gar.bind("mod+j", "focus down")
+gar.bind("mod+k", "focus up")
+gar.bind("mod+l", "focus right")
+
+-- Swap windows
+gar.bind("mod+shift+h", "swap left")
+gar.bind("mod+shift+j", "swap down")
+gar.bind("mod+shift+k", "swap up")
+gar.bind("mod+shift+l", "swap right")
+
+-- Resize splits
+gar.bind("mod+ctrl+h", "resize left")
+gar.bind("mod+ctrl+j", "resize down")
+gar.bind("mod+ctrl+k", "resize up")
+gar.bind("mod+ctrl+l", "resize right")
+
+-- Workspaces
+for i = 1, 9 do
+  gar.bind("mod+" .. i, "workspace " .. i)
+  gar.bind("mod+shift+" .. i, "move-to-workspace " .. i)
+end
+gar.bind("mod+0", "workspace 10")
+gar.bind("mod+shift+0", "move-to-workspace 10")
+
+-- Scratchpad
+gar.special_workspace("term", {
+  position = "center",
+  width = 0.8,
+  height = 0.8,
+})
+gar.bind("mod+grave", "toggle-special term")
+
+-- Actions
+gar.bind("mod+return", "spawn terminal")
+gar.bind("mod+shift+q", "close")
+gar.bind("mod+e", "equalize")
+gar.bind("mod+shift+space", "toggle-floating")
+gar.bind("mod+shift+r", "reload")
+
+-- Window rules
+gar.rule({ app_name = "Calculator" }, { floating = true })
+gar.rule({ app_name = "System Settings" }, { floating = true })
+gar.rule({ app_bundle = "com.apple.Safari" }, { workspace = 2 })
+
+-- Autostart
+gar.exec_once("open -a WezTerm")
+
+-- Events
+gar.on("workspace_changed", function(old, new)
+  gar.exec("echo 'workspace: " .. new .. "' > /tmp/tarmac-ws")
+end)
+```
