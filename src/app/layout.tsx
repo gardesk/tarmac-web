@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.png", type: "image/png" },
+    ],
+  },
   title: "tarmac — macOS tiling window manager",
   description:
     "A keyboard-driven tiling window manager for macOS, written in Rust. BSP layouts, workspaces, IPC, Lua configuration.",
