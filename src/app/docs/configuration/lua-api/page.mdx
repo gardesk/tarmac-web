@@ -1,0 +1,184 @@
+# Lua API (gar)
+
+tarmac exposes a global `gar` table in the Lua config environment. This is the sole interface for configuring tarmac from `init.lua`.
+
+## gar.set(key, value)
+
+Set a configuration option. Both arguments are strings.
+
+```lua
+gar.set("gap_inner", "8")
+gar.set("mod_key", "command")
+gar.set("focus_follows_mouse", "true")
+```
+
+See [Settings Reference](/docs/configuration/settings) for all available keys.
+
+## gar.bind(keys, action)
+
+Register a global hotkey. The `keys` string uses `+` to combine modifiers and a key name. The `action` string specifies what happens when the key is pressed.
+
+```lua
+gar.bind("mod+h", "focus left")
+gar.bind("mod+shift+q", "close")
+gar.bind("mod+return", "spawn terminal")
+```
+
+### Key string format
+
+Modifiers:
+- `mod` — replaced by the current `mod_key` setting
+- `shift` — Shift key
+- `ctrl` — Control key
+- `alt` — Option key
+- `fn` — Function key
+
+Key names: `a`-`z`, `0`-`9`, `return`, `space`, `tab`, `escape`, `delete`, `grave`, `minus`, `equal`, `leftbracket`, `rightbracket`, `semicolon`, `quote`, `comma`, `period`, `slash`, `backslash`, `left`, `right`, `up`, `down`, `f1`-`f12`.
+
+### Action strings
+
+| Action | Description |
+|--------|-------------|
+| `focus left\|right\|up\|down` | Move focus in a direction |
+| `swap left\|right\|up\|down` | Swap the focused window with its neighbor |
+| `resize left\|right\|up\|down` | Adjust the split ratio toward a direction |
+| `close` | Close the focused window |
+| `equalize` | Reset all split ratios to 50/50 |
+| `toggle-floating` | Toggle the focused window between tiled and floating |
+| `workspace N` | Switch to workspace N (1-10) |
+| `move-to-workspace N` | Move focused window to workspace N |
+| `toggle-special NAME` | Toggle a named scratchpad's visibility |
+| `move-to-special NAME` | Move focused window to a named scratchpad |
+| `focus-monitor next\|prev` | Focus the next or previous monitor |
+| `move-to-monitor next\|prev` | Move focused window to the next or previous monitor |
+| `workspace next\|prev` | Cycle to next or previous workspace |
+| `spawn terminal` | Run the `terminal` command |
+| `reload` | Hot reload the config |
+
+### Dynamic keybinds with Lua loops
+
+Since the config is Lua, you can generate repetitive keybinds programmatically:
+
+```lua
+for i = 1, 9 do
+  gar.bind("mod+" .. i, "workspace " .. i)
+  gar.bind("mod+shift+" .. i, "move-to-workspace " .. i)
+end
+gar.bind("mod+0", "workspace 10")
+gar.bind("mod+shift+0", "move-to-workspace 10")
+```
+
+## gar.rule(match, actions)
+
+Define a window rule. The first argument is a table of match criteria, the second is a table of actions to apply.
+
+```lua
+gar.rule({ app_name = "Calculator" }, { floating = true })
+gar.rule({ app_bundle = "com.apple.Safari" }, { workspace = 2 })
+gar.rule({ app_name = "System Settings" }, { floating = true })
+gar.rule({ title = "Picture in Picture" }, { floating = true })
+```
+
+### Match criteria
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `app_name` | string | Match by application name (e.g., `"Firefox"`) |
+| `app_bundle` | string | Match by bundle identifier (e.g., `"com.apple.Safari"`) |
+| `title` | string | Match by window title |
+
+All specified criteria must match (AND logic). If multiple criteria are set, all must be true.
+
+### Rule actions
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `floating` | bool | Force window into floating state |
+| `workspace` | string/number | Assign to workspace: `1`-`10` or `"special:name"` |
+| `geometry` | table | Initial position and size: `{x, y, width, height}` |
+
+Geometry example:
+
+```lua
+gar.rule(
+  { app_name = "Music" },
+  { floating = true, geometry = { 100, 100, 800, 600 } }
+)
+```
+
+See [Window Rules](/docs/window-rules) for more details.
+
+## gar.on(event, callback)
+
+Register a Lua callback for a window manager event.
+
+```lua
+gar.on("window_focused", function(wid)
+  print("focused: " .. wid)
+end)
+
+gar.on("workspace_changed", function(old, new)
+  gar.exec("echo '" .. new .. "' > /tmp/tarmac-workspace")
+end)
+
+gar.on("monitor_focused", function(index)
+  print("monitor: " .. index)
+end)
+```
+
+Available events: `window_focused`, `workspace_changed`, `monitor_focused`.
+
+See [Events & Hooks](/docs/events-hooks) for the full event reference.
+
+## gar.exec(command)
+
+Execute a shell command via `/bin/sh -c`. Runs asynchronously (does not block tarmac).
+
+```lua
+gar.exec("open -a Safari")
+gar.exec("osascript -e 'display notification \"tarmac reloaded\"'")
+```
+
+## gar.exec_once(command)
+
+Like `gar.exec()`, but first checks if a process matching the command is already running. If it is, the command is skipped. Useful for autostart programs that shouldn't spawn duplicates on config reload.
+
+```lua
+gar.exec_once("open -a WezTerm")
+gar.exec_once("open -a Firefox")
+```
+
+## gar.special_workspace(name, options)
+
+Configure a named special workspace (scratchpad). These are overlay workspaces that can be toggled on any monitor.
+
+```lua
+gar.special_workspace("term", {
+  position = "center",
+  width = 0.8,
+  height = 0.8,
+})
+
+gar.special_workspace("music", {
+  position = "bottom",
+  width = 1.0,
+  height = 0.4,
+})
+```
+
+### Options
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `position` | string | `"center"` | Where to place the overlay: `"center"`, `"top"`, `"bottom"` |
+| `width` | number | `0.7` | Width as fraction of screen (0.0 - 1.0) |
+| `height` | number | `0.7` | Height as fraction of screen (0.0 - 1.0) |
+
+After defining a special workspace, bind a key to toggle it:
+
+```lua
+gar.bind("mod+grave", "toggle-special term")
+gar.bind("mod+shift+grave", "move-to-special term")
+```
+
+See [Special Workspaces](/docs/workspaces/special-workspaces) for usage details.
