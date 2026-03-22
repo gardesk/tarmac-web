@@ -1,0 +1,71 @@
+# Accessibility Permissions
+
+tarmac relies on the macOS Accessibility API (AXUIElement) to inspect and manipulate windows. Without this permission, tarmac cannot:
+
+- Read window positions and sizes
+- Move or resize windows
+- Detect window focus changes
+- Query minimum window sizes
+
+## How tarmac checks permissions
+
+At startup, tarmac calls `AXIsProcessTrustedWithOptions` to check whether it has Accessibility access. If the check fails, it logs a warning and continues running — but it won't be able to manage windows.
+
+The check happens once at launch. If you grant permissions while tarmac is already running, you'll need to restart it.
+
+## Granting access
+
+### macOS Ventura and later (System Settings)
+
+1. Open **System Settings**
+2. Go to **Privacy & Security → Accessibility**
+3. Click the lock and authenticate
+4. Click **+**, navigate to `/usr/local/bin/tarmac`, and add it
+5. Make sure the toggle is **on**
+
+### macOS Monterey (System Preferences)
+
+1. Open **System Preferences → Security & Privacy → Privacy**
+2. Select **Accessibility** in the sidebar
+3. Click the lock and authenticate
+4. Click **+** and add the tarmac binary
+
+<div className="screenshot-placeholder">
+  <p className="text-lg font-medium mb-2">Screenshot: Accessibility settings</p>
+  <p className="text-sm">The Accessibility panel with tarmac listed and enabled</p>
+  <p className="text-xs mt-4 italic">[ placeholder — add accessibility-settings.png to public/ ]</p>
+</div>
+
+## Permission revoked after rebuild
+
+macOS ties Accessibility permission to the binary's code signature. If you rebuild tarmac from source, the new binary has a different ad-hoc signature, and macOS silently revokes the permission.
+
+Symptoms:
+- tarmac starts but doesn't tile anything
+- Log shows `AXIsProcessTrusted: false`
+
+Fix: remove the old entry from Accessibility settings and re-add the new binary.
+
+If you're rebuilding frequently during development, you can use `tccutil` to reset the permission database (requires admin):
+
+```bash
+sudo tccutil reset Accessibility com.gardesk.tarmac
+```
+
+Then re-grant access through System Settings.
+
+## ers also needs Accessibility
+
+If you're using [ers](/docs/ers/overview) for window borders, it also needs Accessibility permissions. Add the `ers` binary to the same Accessibility list. ers needs it to detect focus changes and query window geometry.
+
+## Troubleshooting
+
+### "tarmac is not in the Accessibility list"
+
+If you installed via Homebrew, the binary may be at a different path (e.g., `/opt/homebrew/bin/tarmac`). Add that path instead.
+
+### "Permission granted but windows still don't tile"
+
+1. Restart tarmac after granting permission
+2. Check that the correct binary is listed (not an older version)
+3. Run `RUST_LOG=tarmac=debug tarmac` and look for AX-related errors in the output
