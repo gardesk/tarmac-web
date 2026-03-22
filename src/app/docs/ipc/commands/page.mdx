@@ -1,0 +1,224 @@
+# IPC Command Reference
+
+Complete list of commands accepted by the tarmac IPC server.
+
+## Action commands
+
+These commands perform an action and return a success/error response with no data.
+
+### focus
+
+Move focus to a neighboring window.
+
+```bash
+tarmacctl focus left|right|up|down
+```
+
+### swap
+
+Swap the focused window with its neighbor.
+
+```bash
+tarmacctl swap left|right|up|down
+```
+
+### resize
+
+Adjust the split ratio of the nearest divider.
+
+```bash
+tarmacctl resize left|right|up|down
+```
+
+### close
+
+Close the focused window.
+
+```bash
+tarmacctl close
+```
+
+### equalize
+
+Reset all split ratios in the active workspace to 50/50.
+
+```bash
+tarmacctl equalize
+```
+
+### toggle-floating
+
+Toggle the focused window between tiled and floating.
+
+```bash
+tarmacctl toggle-floating
+```
+
+### workspace
+
+Switch to a numbered workspace.
+
+```bash
+tarmacctl workspace 1    # workspace 1-10
+tarmacctl workspace next # cycle forward
+tarmacctl workspace prev # cycle backward
+```
+
+### move-to-workspace
+
+Move the focused window to a numbered workspace.
+
+```bash
+tarmacctl move-to-workspace 3
+```
+
+### toggle-special
+
+Toggle a named special workspace's visibility.
+
+```bash
+tarmacctl toggle-special term
+```
+
+### move-to-special
+
+Move the focused window to a named special workspace.
+
+```bash
+tarmacctl move-to-special term
+```
+
+### focus-monitor
+
+Focus the next or previous monitor.
+
+```bash
+tarmacctl focus-monitor next
+tarmacctl focus-monitor prev
+```
+
+### move-to-monitor
+
+Move the focused window to the next or previous monitor.
+
+```bash
+tarmacctl move-to-monitor next
+tarmacctl move-to-monitor prev
+```
+
+### reload
+
+Hot reload the configuration file.
+
+```bash
+tarmacctl reload
+```
+
+### exec
+
+Execute a shell command.
+
+```bash
+tarmacctl exec "open -a Safari"
+```
+
+## Query commands
+
+These commands return JSON data about the current state.
+
+### get-workspaces
+
+Get all workspaces with their window count and assignment.
+
+```bash
+tarmacctl get-workspaces
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": [
+    { "id": 1, "monitor": 0, "windows": 3, "focused": true },
+    { "id": 2, "monitor": 0, "windows": 1, "focused": false }
+  ]
+}
+```
+
+### get-focused
+
+Get details about the focused window.
+
+```bash
+tarmacctl get-focused
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "window_id": 1234,
+    "app_name": "Firefox",
+    "app_bundle": "org.mozilla.firefox",
+    "title": "GitHub",
+    "floating": false
+  }
+}
+```
+
+### get-windows
+
+Get all managed windows.
+
+```bash
+tarmacctl get-windows
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": [
+    { "window_id": 1234, "app_name": "Firefox", "title": "GitHub", "workspace": 1, "floating": false },
+    { "window_id": 5678, "app_name": "WezTerm", "title": "~", "workspace": 1, "floating": false }
+  ]
+}
+```
+
+### get-monitors
+
+Get monitor list with geometry.
+
+```bash
+tarmacctl get-monitors
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": [
+    { "index": 0, "x": 0, "y": 0, "width": 2560, "height": 1440, "focused": true }
+  ]
+}
+```
+
+### get-tree
+
+Get the BSP layout tree for a workspace. Optionally specify a workspace number (defaults to the active workspace).
+
+```bash
+tarmacctl get-tree        # active workspace
+tarmacctl get-tree 2      # workspace 2
+```
+
+Response includes the tree structure with split directions, ratios, and window IDs at leaf nodes.
+
+## Subscribe
+
+See [Events & Subscribe](/docs/ipc/events-subscribe).
