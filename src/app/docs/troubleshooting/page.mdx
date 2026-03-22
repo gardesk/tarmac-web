@@ -1,0 +1,137 @@
+# Troubleshooting & FAQ
+
+## Common issues
+
+### tarmac starts but doesn't tile any windows
+
+**Cause:** Missing Accessibility permissions.
+
+**Fix:** Open System Settings → Privacy & Security → Accessibility and add the `tarmac` binary. See [Accessibility](/docs/getting-started/accessibility).
+
+After granting permission, restart tarmac.
+
+### Windows aren't tiling after a rebuild from source
+
+**Cause:** macOS revokes Accessibility permission when the binary's code signature changes.
+
+**Fix:** Remove the old tarmac entry from Accessibility settings and re-add the new binary.
+
+### Some windows refuse to resize
+
+**Cause:** The app has a minimum window size that exceeds the tile area.
+
+tarmac handles this by auto-floating oversized windows. If a window appears floating unexpectedly, it likely has a large minimum size. You can check with:
+
+```bash
+tarmacctl get-focused | jq '.data'
+```
+
+### Keybindings don't work
+
+1. Make sure tarmac is running (check `pgrep tarmac`)
+2. Check for config syntax errors in the log output
+3. Verify your `mod_key` setting matches the key you're pressing
+4. Check for conflicts with macOS system shortcuts
+
+### Config changes don't take effect
+
+Press your reload keybind (default: `mod+shift+r`) or run:
+
+```bash
+tarmacctl reload
+```
+
+Check the log for errors:
+
+```bash
+RUST_LOG=tarmac=info tarmac
+```
+
+### Borders don't appear
+
+1. Verify `border_width` is greater than 0 in your config
+2. Check that the `ers` binary is installed and on your `$PATH`
+3. Verify ers has Accessibility permission (separate from tarmac)
+4. Check if ers is running: `pgrep ers`
+
+### Focus follows mouse is too aggressive
+
+The 500ms cooldown should prevent most issues. If it's still disruptive, disable it:
+
+```lua
+gar.set("focus_follows_mouse", "false")
+```
+
+### tarmac conflicts with Cmd+Q / Cmd+H / Cmd+Tab
+
+tarmac intercepts global hotkeys at a higher priority than macOS. If you've bound keys that conflict with macOS shortcuts (like `mod+q` with `mod_key = "command"`), tarmac wins.
+
+**Fix:** Use `"option"` as your `mod_key`, or avoid binding keys that conflict with macOS:
+
+```lua
+gar.set("mod_key", "option")
+```
+
+### IPC connection refused
+
+1. Check that tarmac is running
+2. Verify the socket exists: `ls -la /tmp/tarmac-$USER.sock`
+3. Check socket permissions: the socket should be owned by your user
+
+If the socket file exists but tarmac isn't running, it's stale. tarmac cleans up stale sockets on startup.
+
+## FAQ
+
+### Can tarmac run on Linux?
+
+No. tarmac uses macOS-specific APIs: SkyLight (private framework), CoreGraphics, Accessibility (AXUIElement), and Carbon hotkeys. There's no Linux port planned.
+
+### Does tarmac replace macOS Spaces?
+
+No. tarmac workspaces are independent of macOS Spaces (Mission Control). tarmac manages its own virtual desktops by showing/hiding windows. You can use both systems simultaneously, but it may be confusing. For best results, keep all tarmac windows on a single macOS Space.
+
+### Can I use tarmac with SIP disabled?
+
+Yes, but it's not required. tarmac works with System Integrity Protection enabled. It uses the Accessibility API, which only requires the user-granted permission in System Settings.
+
+### What happens when tarmac crashes or exits?
+
+Windows return to their normal macOS floating state. They keep their last position/size. Nothing is lost.
+
+### How does tarmac discover windows?
+
+tarmac polls `CGWindowListCopyWindowInfo` every 50ms to detect new, moved, and closed windows. This is more reliable than NSWorkspace notifications, which can miss events.
+
+### Can I use tarmac with yabai/AeroSpace?
+
+Not recommended. Running two tiling window managers simultaneously will cause conflicts. Use one or the other.
+
+### Is tarmac safe to use? (Private APIs)
+
+tarmac uses the SkyLight private framework for window visibility management. Private APIs are undocumented and could change between macOS versions. tarmac is tested on Tahoe and should work on Monterey+, but there are no guarantees for future macOS releases.
+
+ers also uses SkyLight for border rendering and is subject to the same limitations.
+
+### How do I completely uninstall tarmac?
+
+```bash
+# Stop tarmac
+kill $(pgrep tarmac)
+
+# Remove binaries
+sudo rm /usr/local/bin/tarmac /usr/local/bin/tarmacctl /usr/local/bin/ers
+
+# Remove config
+rm -rf ~/.config/tarmac
+
+# Remove launchd agent (if installed)
+launchctl unload ~/Library/LaunchAgents/com.gardesk.tarmac.plist
+rm ~/Library/LaunchAgents/com.gardesk.tarmac.plist
+
+# Remove from Accessibility settings
+# (Do this manually in System Settings)
+```
+
+### Where can I report bugs?
+
+Open an issue on the GitHub repository: [github.com/gardesk/tarmac](https://github.com/gardesk/tarmac)
