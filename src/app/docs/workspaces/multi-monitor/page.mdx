@@ -1,0 +1,78 @@
+# Multi-Monitor
+
+tarmac supports multiple displays. Each monitor gets its own set of 10 workspaces.
+
+## Monitor discovery
+
+tarmac detects monitors at startup using CoreGraphics display APIs. Monitors are sorted left-to-right by their horizontal screen position. The leftmost monitor is index 0.
+
+Monitor hotplug is supported — if you connect or disconnect a display, tarmac refreshes the monitor list and reassigns workspaces.
+
+## Workspace assignment
+
+Each monitor shows one workspace at a time. By default:
+
+- Monitor 0 starts on workspace 1
+- Monitor 1 starts on workspace 2
+- (and so on)
+
+When you switch workspaces, the switch happens on the currently focused monitor.
+
+## Navigating between monitors
+
+```lua
+gar.bind("mod+comma", "focus-monitor prev")
+gar.bind("mod+period", "focus-monitor next")
+```
+
+This cycles focus between monitors in left-to-right order. When focus moves to a new monitor, the cursor warps to the focused window on that monitor (if `mouse_follows_focus` is enabled).
+
+## Moving windows between monitors
+
+```lua
+gar.bind("mod+shift+comma", "move-to-monitor prev")
+gar.bind("mod+shift+period", "move-to-monitor next")
+```
+
+The focused window is removed from the current monitor's workspace and inserted into the active workspace on the target monitor.
+
+## Usable frame
+
+tarmac respects the usable frame of each display, which excludes:
+
+- The macOS menu bar
+- The notch area on newer MacBooks
+- The reserved `bar_height` for external status bars
+
+The tiling area is the usable frame minus `gap_outer` on all sides and `bar_height` from the top.
+
+## Querying monitors
+
+Via IPC:
+
+```bash
+tarmacctl get-monitors
+```
+
+Returns JSON with monitor geometry:
+
+```json
+{
+  "success": true,
+  "data": [
+    { "index": 0, "x": 0, "y": 0, "width": 2560, "height": 1440, "focused": true },
+    { "index": 1, "x": 2560, "y": 0, "width": 1920, "height": 1080, "focused": false }
+  ]
+}
+```
+
+## Display hotplug
+
+When a monitor is connected or disconnected, tarmac:
+
+1. Refreshes the display list from CoreGraphics
+2. Re-sorts monitors left-to-right
+3. Reassigns workspaces that were on disconnected monitors to remaining monitors
+4. Recalculates and applies layouts
+
+Windows on disconnected monitors are moved to the nearest remaining monitor.
