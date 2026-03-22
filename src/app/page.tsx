@@ -173,14 +173,17 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Screenshot placeholder */}
+        {/* Screenshot */}
         <section className="max-w-4xl mx-auto px-6 pb-16">
-          <div className="card p-0 overflow-hidden">
-            <div className="screenshot-placeholder">
-              <p className="text-lg font-medium mb-2">Screenshot: tarmac in action</p>
-              <p className="text-sm">BSP layout with gaps, borders, and multiple workspaces on macOS</p>
-              <p className="text-xs mt-4 italic">[ placeholder &mdash; add hero-screenshot.png to public/ ]</p>
-            </div>
+          <div className="card p-0 overflow-hidden rounded-xl">
+            <img
+              src="/hero-screenshot.png"
+              alt="tarmac tiling window manager on macOS — BSP layout with gaps, borders, and multiple windows"
+              width={1920}
+              height={1080}
+              className="w-full h-auto"
+              loading="lazy"
+            />
           </div>
         </section>
 
