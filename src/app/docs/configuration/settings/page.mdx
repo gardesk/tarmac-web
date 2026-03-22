@@ -1,0 +1,119 @@
+# Settings Reference
+
+All settings are configured via `gar.set(key, value)` in `~/.config/tarmac/init.lua`. Both arguments are strings.
+
+## Complete settings table
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `mod_key` | string | `"command"` | Primary modifier key. Options: `"command"` / `"cmd"`, `"option"` / `"alt"`, `"control"` / `"ctrl"` |
+| `gap_inner` | number | `0` | Pixels between adjacent windows |
+| `gap_outer` | number | `0` | Pixels between windows and screen edges |
+| `focus_follows_mouse` | bool | `true` | Automatically focus the window under the cursor (500ms cooldown) |
+| `mouse_follows_focus` | bool | `true` | Warp the cursor to the center of a newly focused window |
+| `terminal` | string | `"open -na WezTerm"` | Shell command executed by the `spawn terminal` action |
+| `bar_height` | number | `0` | Pixels to reserve at the top of each display for an external bar (e.g. sketchybar) |
+| `border_width` | number | `0` | Border thickness in pixels. Set to 0 to disable borders entirely. Requires ers. |
+| `border_color_focused` | hex | `"#5294e2"` | Border color for the focused window. Accepts `#RRGGBB` or `#RRGGBBAA`. |
+| `border_color_unfocused` | hex | `"#2d2d2d"` | Border color for unfocused windows. Accepts `#RRGGBB` or `#RRGGBBAA`. |
+| `border_radius` | number | `10` | Corner radius for borders in pixels |
+
+## Setting details
+
+### mod_key
+
+The modifier key used in all `gar.bind()` calls when you write `mod+`. For example, if `mod_key` is `"command"`, then `gar.bind("mod+h", "focus left")` means Cmd+H.
+
+```lua
+gar.set("mod_key", "command")   -- Cmd
+gar.set("mod_key", "option")    -- Option/Alt
+gar.set("mod_key", "control")   -- Control
+```
+
+Aliases: `"cmd"` works for `"command"`, `"alt"` for `"option"`, `"ctrl"` for `"control"`.
+
+### gap_inner / gap_outer
+
+`gap_inner` controls space between adjacent tiled windows. `gap_outer` controls space between windows and the screen edge.
+
+```lua
+gar.set("gap_inner", "8")
+gar.set("gap_outer", "12")
+```
+
+Set both to `"0"` for a gapless layout (the default).
+
+<div className="screenshot-placeholder">
+  <p className="text-lg font-medium mb-2">Screenshot: Gaps comparison</p>
+  <p className="text-sm">Side by side: no gaps vs. inner=8 outer=12</p>
+  <p className="text-xs mt-4 italic">[ placeholder — add gaps-comparison.png to public/ ]</p>
+</div>
+
+### focus_follows_mouse
+
+When enabled, hovering the cursor over a window for 500ms focuses it without clicking. There's a built-in cooldown to prevent rapid refocusing during drag operations.
+
+```lua
+gar.set("focus_follows_mouse", "true")   -- enabled (default)
+gar.set("focus_follows_mouse", "false")  -- click-to-focus only
+```
+
+### mouse_follows_focus
+
+When enabled, the cursor warps to the center of a window when it receives focus (e.g., via `focus left`). Useful for keeping the cursor near the window you're working with.
+
+```lua
+gar.set("mouse_follows_focus", "true")   -- enabled (default)
+gar.set("mouse_follows_focus", "false")  -- cursor stays put
+```
+
+### terminal
+
+The shell command to run when the `spawn terminal` action fires. This is passed to `/bin/sh -c`.
+
+```lua
+gar.set("terminal", "open -na WezTerm")
+gar.set("terminal", "open -na iTerm")
+gar.set("terminal", "open -na Alacritty")
+```
+
+### bar_height
+
+Reserve space at the top of each display for an external status bar. The tiling area starts below this offset. Set to the pixel height of your bar.
+
+```lua
+gar.set("bar_height", "32")   -- e.g., sketchybar
+gar.set("bar_height", "0")    -- no bar (default)
+```
+
+### border_width
+
+Enables window borders via ers when set to a value greater than 0. Set to `"0"` to disable borders (ers won't be started).
+
+```lua
+gar.set("border_width", "4")
+```
+
+When you change border settings and reload the config, tarmac restarts the ers process with the new parameters.
+
+### border_color_focused / border_color_unfocused
+
+Hex color strings for the focused and unfocused window borders. Supports optional alpha channel.
+
+```lua
+gar.set("border_color_focused", "#5294e2")       -- opaque blue
+gar.set("border_color_unfocused", "#59595980")   -- semi-transparent gray
+```
+
+### border_radius
+
+Corner radius in pixels for border overlays.
+
+```lua
+gar.set("border_radius", "10")  -- rounded corners
+gar.set("border_radius", "0")   -- square corners
+```
+
+## Unknown settings
+
+Setting a key that tarmac doesn't recognize is silently ignored (logged at `trace` level). This means typos in setting names won't produce errors — double-check your spelling if something isn't working.
