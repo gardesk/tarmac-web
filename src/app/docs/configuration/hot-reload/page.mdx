@@ -1,0 +1,65 @@
+# Hot Reload
+
+tarmac supports reloading your configuration without restarting the daemon.
+
+## Triggering a reload
+
+### Via keybind
+
+The default keybind is:
+
+```lua
+gar.bind("mod+shift+r", "reload")
+```
+
+Press your modifier key + Shift + R to reload the config.
+
+### Via IPC
+
+```bash
+tarmacctl reload
+```
+
+Or directly via the socket:
+
+```bash
+echo '{"command":"reload","args":[]}' | socat - UNIX-CONNECT:/tmp/tarmac-$USER.sock
+```
+
+## What happens on reload
+
+1. tarmac re-reads and re-executes `~/.config/tarmac/init.lua` from scratch
+2. All settings are reset to defaults, then the config file applies its values
+3. All keybinds are replaced with the ones defined in the new config
+4. All window rules are replaced
+5. All event callbacks are replaced
+6. If border settings changed, the ers process is restarted with new parameters
+7. The layout is recalculated and applied to all windows
+
+## What persists across reloads
+
+- Window positions within the BSP tree (the tree structure is preserved)
+- Workspace assignments (which workspace each window is on)
+- Floating/tiled state of each window
+- The IPC socket and any active subscriptions
+
+## What does not persist
+
+- Keybinds — the new config completely replaces the old binds
+- Settings — everything resets to defaults before the new config runs
+- Event callbacks — old callbacks are dropped, new ones registered
+- Shell commands from `gar.exec_once()` — the "already running" check still works, so these won't re-run if the process is still alive
+
+## Reload errors
+
+If the Lua config has a syntax error or runtime error, tarmac logs the error and falls back to the previous working configuration. The daemon does not crash on a bad config reload.
+
+```
+ERROR tarmac: lua config error: [string "init.lua"]:15: unexpected symbol near ')'
+```
+
+Check the log output to debug config errors. You can run with `RUST_LOG=tarmac=debug` for more detail.
+
+## Default keybinds fallback
+
+If your config defines zero keybinds (e.g., you comment out all `gar.bind()` calls), tarmac loads a built-in set of default keybinds. This prevents you from being locked out. See [Default Binds](/docs/keybindings/defaults) for the full list.
