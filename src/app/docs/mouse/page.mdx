@@ -1,0 +1,71 @@
+# Mouse
+
+tarmac supports several mouse-driven interactions alongside its keyboard focus.
+
+## Click to focus
+
+Clicking any window focuses it. This works for both tiled and floating windows and is always enabled.
+
+tarmac intercepts mouse events via a CGEventTap in listen-only mode (it observes clicks without consuming them). When a left-click is detected, tarmac determines which window is under the cursor and focuses it.
+
+## Focus follows mouse
+
+When enabled, hovering the cursor over a window focuses it automatically — no click required.
+
+```lua
+gar.set("focus_follows_mouse", "true")   -- enabled (default)
+gar.set("focus_follows_mouse", "false")  -- disabled
+```
+
+### Cooldown
+
+Focus-follows-mouse has a 500ms cooldown to prevent rapid refocusing. After a focus change, the mouse must hover over a different window for 500ms before another automatic focus change triggers. This prevents:
+
+- Accidental focus changes when moving the mouse across windows
+- Focus thrashing during drag operations
+- Rapid cycling when the cursor crosses a window boundary
+
+## Mouse follows focus
+
+When enabled, the cursor warps to the center of a newly focused window whenever focus changes via keyboard (e.g., `focus left`).
+
+```lua
+gar.set("mouse_follows_focus", "true")   -- enabled (default)
+gar.set("mouse_follows_focus", "false")  -- disabled
+```
+
+This only triggers on keyboard-driven focus changes, not on mouse clicks.
+
+## Drag operations
+
+### Move floating windows
+
+Hold **Command** and **left-click drag** on a floating window to move it.
+
+### Resize floating windows
+
+Hold **Command** and **right-click drag** on a floating window to resize it.
+
+These use the macOS Command key directly (not the `mod_key` setting). They're implemented via the same CGEventTap that handles click-to-focus.
+
+> Note: drag operations only work on floating windows. Tiled windows cannot be dragged — use swap/resize keybinds instead.
+
+<div className="screenshot-placeholder">
+  <p className="text-lg font-medium mb-2">Screenshot: Cmd+drag to move</p>
+  <p className="text-sm">A floating window being repositioned with Cmd+drag</p>
+  <p className="text-xs mt-4 italic">[ placeholder — add cmd-drag.png to public/ ]</p>
+</div>
+
+## Mouse event tap
+
+tarmac uses a `CGEventTap` with `kCGEventTapOptionListenOnly` to observe mouse events system-wide. This means:
+
+- Mouse events are not consumed — they still reach the target application
+- No modifier keys are swallowed
+- The event tap is passive and has minimal performance impact
+
+The tap listens for:
+- Left mouse down (click-to-focus)
+- Left mouse drag with Command (move floating)
+- Right mouse drag with Command (resize floating)
+- Mouse moved (focus-follows-mouse)
