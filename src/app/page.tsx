@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Terminal from "@/components/Terminal";
+import GitHubStats from "@/components/GitHubStats";
 import ComparisonTable from "@/components/ComparisonTable";
 import FaqSchema from "@/components/FaqSchema";
 import ProgressiveHero from "@/components/ProgressiveHero";
@@ -84,6 +85,11 @@ export default function Home() {
           {/* Install terminal */}
           <div className="mt-8">
             <Terminal />
+          </div>
+
+          {/* GitHub stats */}
+          <div className="mt-4">
+            <GitHubStats />
           </div>
         </section>
 
